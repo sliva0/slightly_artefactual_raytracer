@@ -1,4 +1,5 @@
 use image::ImageBuffer;
+use std::process::Command;
 
 mod types;
 use types::*;
@@ -101,9 +102,9 @@ fn main() {
             fov: 60.0,
             resolution: (480, 270),
             view_point: Point {
-                x: 0.0,
-                y: 0.0,
-                z: 100.0,
+                x: 50.0,
+                y: 100.0,
+                z: 0.0,
             },
         },
         objects: vec![&objects::Room{
@@ -115,7 +116,10 @@ fn main() {
 
     let pict = scene.render_picture();
     let (x, y) = scene.cam.resolution;
+    let path = "image.png";
 
     let img = ImageBuffer::from_fn(x as u32, y as u32, |x, y| pict[y as usize][x as usize]);
-    img.save("image.png").unwrap();
+    img.save(path).unwrap();
+
+    Command::new("C:/Windows/explorer.exe").arg(path).output().unwrap();
 }

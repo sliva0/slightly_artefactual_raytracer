@@ -34,11 +34,14 @@ pub struct Room {
 impl SceneObject for Room {
     fn check_sdf(&self, pos: Point) -> f64 {
         let arr: [f64; 3] = pos.into();
-        self.size - arr[0].max(arr[1]).max(arr[2])
+        self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
     }
     fn get_color(&self, pos: Point) -> Color {
         let arr: [f64; 3] = pos.into();
-        let sum: i32 = arr.iter().map(|x| (x.floor() / self.square_size) as i32).sum();
+        let sum: i32 = arr
+            .iter()
+            .map(|x| ((x + self.size) / self.square_size).floor() as i32)
+            .sum();
         match sum % 2 {
             1 => self.colors.0,
             _ => self.colors.1,
