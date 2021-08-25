@@ -1,5 +1,6 @@
-use image::ImageBuffer;
 use std::process::Command;
+
+use image::ImageBuffer;
 
 mod types;
 use types::*;
@@ -9,117 +10,148 @@ const UP: Point = Point {
     y: 1.0,
     z: 0.0,
 };
-const EPSILON: f64 = 0.0001;
 
-#[derive(Debug)]
 struct Camera {
     pos: Point,
-    fov: f64,
-    resolution: (i32, i32),
-    view_point: Point,
+    look_op: Matrix,
 }
 impl Camera {
-    fn look_at(&self) -> Matrix {
-        let view_vec = (self.view_point - self.pos).normalize();
+    fn cos_sin(length: f64, angle: f64) -> (f64, f64) {
+        let radians = angle.to_radians();
+        (radians.cos() * length, radians.sin() * length)
+    }
+
+    fn from_dir(pos: Point, dir: Point) -> Self {
+        let view_vec = dir.normalize();
         let side_vec = view_vec.cross(UP).normalize();
         let up_vec = side_vec.cross(view_vec);
-        Matrix::from_points(side_vec, up_vec, -view_vec)
+        Camera {
+            pos: pos,
+            look_op: Matrix::from_points(side_vec, up_vec, -view_vec),
+        }
     }
 
-    fn get_ray_dir(&self, pixel: Coord) -> Point {
-        let (xs, ys) = self.resolution;
+    #[allow(dead_code)]
+    fn from_view_point(pos: Point, view_point: Point) -> Self {
+        Self::from_dir(pos, view_point - pos)
+    }
 
-        let (x, y) = ((pixel.0 - xs / 2) as f64, (pixel.1 - ys / 2) as f64);
-        let z = -ys as f64 / (self.fov.to_radians() / 2.0).tan();
+    fn from_angles(pos: Point, angle_w: f64, angle_h: f64) -> Self {
+        let (zx, y) = Self::cos_sin(1.0, angle_h);
+        let (z, x) = Self::cos_sin(zx, angle_w);
 
-        (self.look_at() * Point { x, y, z }).normalize()
+        Self::from_dir(pos, Point { x: -x, y, z: -z })
     }
 }
 
-enum CheckRes<'a> {
-    Miss(f64),
-    Hit(&'a SceneObjectType),
+struct Scene {
+    objects: Vec<MarchingObjectType>,
 }
 
-struct Scene<'a> {
-    cam: Camera,
-    objects: Vec<&'a SceneObjectType>,
-}
-impl<'a> Scene<'a> {
+impl Scene {
     fn check_sdf(&self, pos: Point) -> CheckRes {
         let mut sdf = f64::INFINITY;
 
         for object in self.objects.iter() {
             sdf = sdf.min(object.check_sdf(pos));
             if sdf < EPSILON {
-                return CheckRes::Hit(*object);
+                return CheckRes::Hit(object.clone().upcast());
             }
         }
         CheckRes::Miss(sdf)
     }
 
-    fn trace_ray(&self, pixel: Coord) -> Color {
+    fn trace_ray(&self, start: Point, dir: Point) -> Color {
         let mut depth = 0.0;
-        let dir = self.cam.get_ray_dir(pixel);
 
         loop {
-            let pos = self.cam.pos + (dir * depth);
+            let pos = start + (dir * depth);
             match self.check_sdf(pos) {
                 CheckRes::Hit(obj) => return obj.get_color(pos),
                 CheckRes::Miss(sdf) => depth += sdf,
             }
         }
     }
+}
 
-    fn render_line(&self, line_num: i32) -> Vec<Color> {
-        let mut line = Vec::new();
+struct Renderer {
+    scene: Scene,
+    cam: Camera,
+    fov: f64,
+    resolution: (usize, usize),
+}
+impl Renderer {
+    fn i32_res(&self) -> (i32, i32) {
+        (self.resolution.0 as i32, self.resolution.1 as i32)
+    }
 
-        for column_num in 0..self.cam.resolution.0 {
-            line.push(self.trace_ray((column_num, line_num)));
+    fn get_ray_dir(&self, pixel: Coord) -> Point {
+        let (x, y) = (pixel.0 as i32, pixel.1 as i32);
+        let (xs, ys) = self.i32_res();
+
+        let (x, y) = ((x - xs / 2) as f64, -(y - ys / 2) as f64);
+        let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
+
+        (self.cam.look_op * Point { x, y, z }).normalize()
+    }
+
+    fn render_line(&self, line_num: usize) -> Vec<Color> {
+        let columns = self.resolution.0;
+        let mut line = Vec::with_capacity(columns);
+
+        for i in 0..columns {
+            let ray_dir = self.get_ray_dir((i, line_num));
+            line.push(self.scene.trace_ray(self.cam.pos, ray_dir));
         }
         line
     }
 
-    fn render_picture(&self) -> Vec<Vec<Color>> {
-        let mut picture = Vec::new();
+    fn render(&self) -> Vec<Vec<Color>> {
+        let lines = self.resolution.1;
+        let mut image = Vec::with_capacity(lines);
 
-        for line_num in 0..self.cam.resolution.1 {
-            println!("({}/{})", line_num, self.cam.resolution.1);
-            picture.push(self.render_line(line_num));
+        for i in 0..lines {
+            image.push(self.render_line(i));
+            println!("line: {} / {}", i + 1, lines);
         }
-        picture
+        image
+    }
+
+    fn render_and_save(&self, path: &str) {
+        let image = self.render();
+        let (x, y) = self.resolution;
+        let img = ImageBuffer::from_fn(x as u32, y as u32, |x, y| image[y as usize][x as usize]);
+        img.save(path).unwrap();
     }
 }
 
 fn main() {
-    let scene = Scene {
-        cam: Camera {
-            pos: Point {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            },
-            fov: 60.0,
-            resolution: (480, 270),
-            view_point: Point {
-                x: 50.0,
-                y: 100.0,
-                z: 0.0,
-            },
+    let renderer = Renderer {
+        scene: Scene {
+            objects: vec![Arc::new(objects::Room {
+                size: 100.0,
+                square_size: 20.0,
+                colors: (Rgb([0, 0, 255]), Rgb([255, 0, 0])),
+            })],
         },
-        objects: vec![&objects::Room{
-            size: 100.0,
-            square_size: 20.0,
-            colors: (Rgb([0, 0, 255]), Rgb([255, 0, 0])),
-        }],
+        cam: Camera::from_angles(
+            Point {
+                x: 0.0,
+                y: 70.0,
+                z: 0.0,
+            },
+            -30.0,
+            0.0,
+        ),
+        fov: 60.0,
+        resolution: (480, 270),
     };
 
-    let pict = scene.render_picture();
-    let (x, y) = scene.cam.resolution;
     let path = "image.png";
+    renderer.render_and_save(path);
 
-    let img = ImageBuffer::from_fn(x as u32, y as u32, |x, y| pict[y as usize][x as usize]);
-    img.save(path).unwrap();
-
-    Command::new("C:/Windows/explorer.exe").arg(path).output().unwrap();
+    Command::new("C:/Windows/explorer.exe")
+        .arg(path)
+        .output()
+        .unwrap();
 }
