@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use super::{Color, Point};
 
-pub trait IntoDyn {
+pub trait Upcast {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
     where
         Self: 'a;
 }
-impl<T: Object> IntoDyn for T {
+impl<T: Object> Upcast for T {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
     where
         Self: 'a,
@@ -16,7 +16,7 @@ impl<T: Object> IntoDyn for T {
     }
 }
 
-pub trait Object: IntoDyn {
+pub trait Object: Upcast {
     fn get_color(&self, pos: Point) -> Color;
     fn get_normal(&self, pos: Point, eps: f64) -> Point;
     //fn get_material(&self, pos: Point) -> Material;
@@ -74,12 +74,18 @@ impl MarchingObject for Room {
     }
 }
 
-/*fn main() {
-    let f: Box<dyn MarchingObject> = Box::new(Room {
-        size: 100.0,
-        square_size: 20.0,
-        colors: (Rgb([0, 0, 255]), Rgb([255, 0, 0])),
-    });
-
-    let s: Box<dyn Object> = f as Box<dyn Object>;
-}*/
+struct Plane {
+    ///plane normal
+    n: Point,
+    ///d from plane equation (ax+by+cz+d=0), plane shift
+    d: f64,
+}
+impl Plane {
+    fn new(v1: Point, v2: Point, v3: Point) -> Self {
+        let n = (v1 >> v2) ^ (v1 >> v3);
+        Self {
+            n,
+            d: 0.0, //-n.scalar_mul(v1),
+        }
+    }
+}

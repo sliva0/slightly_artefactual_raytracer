@@ -33,7 +33,7 @@ impl Camera {
 
     #[allow(dead_code)]
     fn from_view_point(pos: Point, view_point: Point) -> Self {
-        Self::from_dir(pos, view_point - pos)
+        Self::from_dir(pos, pos >> view_point)
     }
 
     fn from_angles(pos: Point, angle_w: f64, angle_h: f64) -> Self {
@@ -44,21 +44,25 @@ impl Camera {
     }
 }
 
+pub enum SdfCheckRes {
+    Miss(f64),
+    Hit(ObjectType),
+}
+
 struct Scene {
     objects: Vec<MarchingObjectType>,
 }
-
 impl Scene {
-    fn check_sdf(&self, pos: Point) -> CheckRes {
+    fn check_sdf(&self, pos: Point) -> SdfCheckRes {
         let mut sdf = f64::INFINITY;
 
         for object in self.objects.iter() {
             sdf = sdf.min(object.check_sdf(pos));
             if sdf < EPSILON {
-                return CheckRes::Hit(object.clone().upcast());
+                return SdfCheckRes::Hit(object.clone().upcast());
             }
         }
-        CheckRes::Miss(sdf)
+        SdfCheckRes::Miss(sdf)
     }
 
     fn trace_ray(&self, start: Point, dir: Point) -> Color {
@@ -67,8 +71,8 @@ impl Scene {
         loop {
             let pos = start + (dir * depth);
             match self.check_sdf(pos) {
-                CheckRes::Hit(obj) => return obj.get_color(pos),
-                CheckRes::Miss(sdf) => depth += sdf,
+                SdfCheckRes::Hit(obj) => return obj.get_color(pos),
+                SdfCheckRes::Miss(sdf) => depth += sdf,
             }
         }
     }
@@ -120,7 +124,10 @@ impl Renderer {
     fn render_and_save(&self, path: &str) {
         let image = self.render();
         let (x, y) = self.resolution;
-        let img = ImageBuffer::from_fn(x as u32, y as u32, |x, y| image[y as usize][x as usize]);
+
+        let img = ImageBuffer::from_fn(x as u32, y as u32, |x, y| {
+            image[y as usize][x as usize].raw()
+        });
         img.save(path).unwrap();
     }
 }
@@ -131,7 +138,7 @@ fn main() {
             objects: vec![Arc::new(objects::Room {
                 size: 100.0,
                 square_size: 20.0,
-                colors: (Rgb([0, 0, 255]), Rgb([255, 0, 0])),
+                colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
             })],
         },
         cam: Camera::from_angles(

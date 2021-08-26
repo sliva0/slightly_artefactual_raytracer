@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, BitXor, Div, Mul, Neg, Shr, Sub};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Point {
@@ -14,11 +14,11 @@ impl Point {
             z: 0.0,
         }
     }
-    pub fn abs(&self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
+    pub fn abs(self) -> f64 {
+        (self * self).sqrt()
     }
-    pub fn dist(self, other: Self) -> f64 {
-        (self - other).abs()
+    pub fn dist(self, rhs: Self) -> f64 {
+        (self >> rhs).abs()
     }
     #[allow(illegal_floating_point_literal_pattern)]
     pub fn normalize(self) -> Self {
@@ -27,11 +27,14 @@ impl Point {
             abs => self / abs,
         }
     }
-    pub fn cross(self, other: Self) -> Self {
+    pub fn scalar(self, rhs: Self) -> f64 {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+    pub fn cross(self, rhs: Self) -> Self {
         Self {
-            x: self.y * other.z - self.z * other.y,
-            y: self.z * other.x - self.x * other.z,
-            z: self.x * other.y - self.y * other.x,
+            x: self.y * rhs.z - self.z * rhs.y,
+            y: self.z * rhs.x - self.x * rhs.z,
+            z: self.x * rhs.y - self.y * rhs.x,
         }
     }
 }
@@ -84,5 +87,24 @@ impl Neg for Point {
     type Output = Self;
     fn neg(self) -> Self {
         self * -1.0
+    }
+}
+
+impl Mul for Point {
+    type Output = f64;
+    fn mul(self, rhs: Self) -> f64 {
+        self.scalar(rhs)
+    }
+}
+impl BitXor for Point {
+    type Output = Self;
+    fn bitxor(self, rhs: Self) -> Self {
+        self.cross(rhs)
+    }
+}
+impl Shr for Point {
+    type Output = Self;
+    fn shr(self, rhs: Self) -> Self {
+        rhs - self
     }
 }
