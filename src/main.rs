@@ -157,8 +157,21 @@ fn main() {
     let path = "image.png";
     renderer.render_and_save(path);
 
-    Command::new("C:/Windows/explorer.exe")
-        .arg(path)
-        .output()
-        .unwrap();
+    match {
+        if cfg!(windows) {
+            Some("C:/Windows/explorer.exe")
+        } else if cfg!(unix) {
+            Some("xdg-open")
+        } else {
+            None
+        }
+    } {
+        Some(opener) => {
+            Command::new(opener)
+                .arg(path)
+                .output()
+                .unwrap();
+        }
+        None => {}
+    }
 }
