@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use super::{Color, Point};
+use super::{Color, Point, Vector};
 
 use super::object_types::{
     MarchingObject, MetaTracingObject, Object, TracingObject, TracingObjectType,
@@ -12,8 +12,8 @@ impl Object for DummyObject {
     fn get_color(&self, _pos: Point) -> Color {
         Color::ERR_COLOR
     }
-    fn get_normal(&self, _pos: Point, _eps: f64) -> Point {
-        Point::new()
+    fn get_normal(&self, _pos: Point, _eps: f64) -> Vector {
+        Vector::new()
     }
 }
 
@@ -36,7 +36,7 @@ impl Object for MarchingRoom {
         }
     }
 
-    fn get_normal(&self, pos: Point, eps: f64) -> Point {
+    fn get_normal(&self, pos: Point, eps: f64) -> Vector {
         MarchingObject::get_normal(self, pos, eps)
     }
 }
@@ -56,7 +56,7 @@ fn pair_with<F: Fn(Point, Point) -> T, T>(p: PointTuple, f: F) -> (T, T, T) {
 
 pub struct Plane {
     ///plane normal
-    n: Point,
+    n: Vector,
     ///d from plane equation (ax + by + cz + d = 0), plane shift
     d: f64,
 }
@@ -65,7 +65,7 @@ impl Plane {
         let n = ((v.0 >> v.1) ^ (v.0 >> v.2)).normalize();
         Self { n, d: -n * v.0 }
     }
-    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         #[allow(illegal_floating_point_literal_pattern)]
         let dist = match dir * self.n {
             0.0 => return None,
@@ -95,7 +95,7 @@ impl Polygon {
             plane: Plane::new(v),
         }
     }
-    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         let dist = self.plane.find_intersection(start, dir)?;
         let pos = start + dir * dist;
 
@@ -113,7 +113,7 @@ impl Polygon {
             None
         }
     }
-    fn get_normal(&self) -> Point {
+    fn get_normal(&self) -> Vector {
         self.plane.n
     }
 }
@@ -126,9 +126,9 @@ pub struct ObjectPolygon<T: MetaTracingObject> {
 impl<'a, T: MetaTracingObject + 'a> ObjectPolygon<T> {
     fn collect_cuboid_face(
         obj: Weak<T>,
-        shift: Point,
-        dir: Point,
-        sides: (Point, Point),
+        shift: Vector,
+        dir: Vector,
+        sides: (Vector, Vector),
     ) -> Vec<Arc<dyn TracingObject + 'a>> {
         let center = shift + dir;
         let c = (
@@ -156,12 +156,12 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
             None => Color::ERR_COLOR,
         }
     }
-    fn get_normal(&self, _pos: Point, _eps: f64) -> Point {
+    fn get_normal(&self, _pos: Point, _eps: f64) -> Vector {
         self.p.get_normal()
     }
 }
 impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
-    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         self.p.find_intersection(start, dir)
     }
 }
@@ -192,9 +192,9 @@ impl MetaTracingObject for TracingRoom {
         let p0 = Point::new();
         let pairs = pair_with(
             (
-                Point { x: 1.0, ..p0 },
-                Point { y: 1.0, ..p0 },
-                Point { z: 1.0, ..p0 },
+                Vector { x: 1.0, ..p0 },
+                Vector { y: 1.0, ..p0 },
+                Vector { z: 1.0, ..p0 },
             ),
             |p1, p2| (p1, p2),
         );

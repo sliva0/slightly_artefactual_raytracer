@@ -27,7 +27,7 @@ impl Camera {
         let up_vec = side_vec.cross(view_vec);
         Camera {
             pos: pos,
-            look_op: Matrix::from_points(side_vec, up_vec, -view_vec),
+            look_op: Matrix::from_vectors(side_vec, up_vec, -view_vec),
         }
     }
 
