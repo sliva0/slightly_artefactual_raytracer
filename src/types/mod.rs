@@ -16,4 +16,4 @@ pub mod objects;
 
 pub type Vector = Point;
 pub type Coord = (usize, usize);
-pub const EPSILON: f64 = 0.00000001;
+pub const EPSILON: f64 = f64::EPSILON;

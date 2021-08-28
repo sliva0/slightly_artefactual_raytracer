@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{process::Command, thread};
 
 use image::ImageBuffer;
 
@@ -138,6 +138,7 @@ struct Renderer<'a> {
     fov: f64,
     resolution: (usize, usize),
 }
+
 impl<'a> Renderer<'a> {
     fn i32_res(&self) -> (i32, i32) {
         (self.resolution.0 as i32, self.resolution.1 as i32)
@@ -153,29 +154,31 @@ impl<'a> Renderer<'a> {
         (self.cam.look_op * Point { x, y, z }).normalize()
     }
 
-    fn render_line(&self, line_num: usize) -> Vec<Color> {
-        let columns = self.resolution.0;
-        let mut line = Vec::with_capacity(columns);
+    fn render_line(&self, line_num: usize, line: &mut Vec<Color>) {
+        let (lines, columns) = self.resolution;
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
             line.push(self.scene.compute_ray(self.cam.pos, ray_dir));
         }
-        line
+        println!("line: {} / {}", line_num + 1, lines);
     }
 
-    fn render(&self) -> Vec<Vec<Color>> {
+    fn render(self: Arc<Self>) -> Vec<Vec<Color>> {
         let lines = self.resolution.1;
         let mut image = Vec::with_capacity(lines);
+        image.resize_with(lines, Vec::new);
 
-        for i in 0..lines {
-            image.push(self.render_line(i));
-            println!("line: {} / {}", i + 1, lines);
+        for (i, line) in image.iter_mut().enumerate() {
+            let sref = self.clone();
+            thread::spawn(move || sref.render_line(i, line))
+                .join()
+                .unwrap();
         }
         image
     }
 
-    fn render_and_save(&self, path: &str) {
+    fn render_and_save(self: Arc<Self>, path: &str) {
         let image = self.render();
         let (x, y) = self.resolution;
 
@@ -204,7 +207,7 @@ fn open_image(path: &str) {
 }
 
 fn main() {
-    let renderer = Renderer {
+    let renderer = Arc::new(Renderer {
         scene: Scene::new(
             vec![],
             vec![],
@@ -224,8 +227,8 @@ fn main() {
             0.0,
         ),
         fov: 60.0,
-        resolution: (480, 270),
-    };
+        resolution: (640, 360),
+    });
 
     let path = "image.png";
     renderer.render_and_save(path);

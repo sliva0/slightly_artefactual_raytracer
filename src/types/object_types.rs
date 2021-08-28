@@ -7,7 +7,7 @@ pub type MarchingObjectType<'a> = Arc<dyn MarchingObject + 'a>;
 pub type TracingObjectType<'a> = Arc<dyn TracingObject + 'a>;
 pub type MetaTracingObjectType<'a> = Arc<dyn MetaTracingObject + 'a>;
 
-pub trait Upcast {
+pub trait Upcast: Sync + Send {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
     where
         Self: 'a;
@@ -21,7 +21,7 @@ impl<T: Object> Upcast for T {
     }
 }
 
-pub trait Object: Upcast {
+pub trait Object: Upcast + Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn get_normal(&self, pos: Point, eps: f64) -> Vector;
     //fn get_material(&self, pos: Point) -> Material;
@@ -48,7 +48,7 @@ pub trait TracingObject: Object {
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64>;
 }
 
-pub trait MetaTracingObject {
+pub trait MetaTracingObject: Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
 }

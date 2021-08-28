@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use super::{Color, Point, Vector};
+use super::{Color, Point, Vector, EPSILON};
 
 use super::object_types::{
     MarchingObject, MetaTracingObject, Object, TracingObject, TracingObjectType,
@@ -108,7 +108,7 @@ impl Polygon {
             |v1, v2| v1 * v2,
         );
         if m.0.min(m.1).min(m.2) >= 0.0 {
-            Some(dist)
+            Some(dist - EPSILON)
         } else {
             None
         }
@@ -123,13 +123,13 @@ pub struct ObjectPolygon<T: MetaTracingObject> {
     obj: Weak<T>,
 }
 
-impl<'a, T: MetaTracingObject + 'a> ObjectPolygon<T> {
+impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
     fn collect_cuboid_face(
         obj: Weak<T>,
         shift: Vector,
         dir: Vector,
         sides: (Vector, Vector),
-    ) -> Vec<Arc<dyn TracingObject + 'a>> {
+    ) -> Vec<TracingObjectType<'a>> {
         let center = shift + dir;
         let c = (
             center + sides.0 + sides.1,

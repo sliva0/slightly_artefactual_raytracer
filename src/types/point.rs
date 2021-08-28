@@ -48,6 +48,9 @@ impl Vector {
             z: self.z * rhs.z,
         }
     }
+    pub fn reflect(self, rhs: Self) -> Self {
+        self - rhs * (self * rhs * 2.0)
+    }
 }
 
 impl From<Point> for [f64; 3] {
