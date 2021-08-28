@@ -44,19 +44,41 @@ impl Camera {
     }
 }
 
-pub enum SdfCheckRes {
+pub enum SdfCheckRes<'a> {
     Miss(f64),
-    Hit(ObjectType),
+    Hit(ObjectType<'a>),
 }
 
-struct Scene {
-    objects: Vec<MarchingObjectType>,
+struct Scene<'a> {
+    marching_objs: Vec<MarchingObjectType<'a>>,
+    tracing_objs: Vec<TracingObjectType<'a>>,
+    meta_objs: Vec<MetaTracingObjectType<'a>>,
 }
-impl Scene {
+impl<'a> Scene<'a> {
+    fn build_meta_objects(&mut self) {
+        for object in self.meta_objs.iter().map(Arc::clone) {
+            self.tracing_objs.extend(object.build_objects());
+        }
+    }
+
+    fn new(
+        marching_objs: Vec<MarchingObjectType<'a>>,
+        tracing_objs: Vec<TracingObjectType<'a>>,
+        meta_objs: Vec<MetaTracingObjectType<'a>>,
+    ) -> Self {
+        let mut new_self = Self {
+            marching_objs,
+            tracing_objs,
+            meta_objs,
+        };
+        new_self.build_meta_objects();
+        new_self
+    }
+
     fn check_sdf(&self, pos: Point) -> SdfCheckRes {
         let mut sdf = f64::INFINITY;
 
-        for object in self.objects.iter() {
+        for object in self.marching_objs.iter() {
             sdf = sdf.min(object.check_sdf(pos));
             if sdf < EPSILON {
                 return SdfCheckRes::Hit(object.clone().upcast());
@@ -65,26 +87,58 @@ impl Scene {
         SdfCheckRes::Miss(sdf)
     }
 
-    fn trace_ray(&self, start: Point, dir: Point) -> Color {
+    fn march_ray(&self, start: Point, dir: Point, max_depth: f64) -> Option<(ObjectType, f64)> {
         let mut depth = 0.0;
 
         loop {
             let pos = start + (dir * depth);
             match self.check_sdf(pos) {
-                SdfCheckRes::Hit(obj) => return obj.get_color(pos),
+                SdfCheckRes::Hit(obj) => return Some((obj, depth)),
                 SdfCheckRes::Miss(sdf) => depth += sdf,
+            }
+            if depth > max_depth || depth == f64::INFINITY {
+                return None;
             }
         }
     }
+
+    fn trace_ray(&self, start: Point, dir: Point) -> (ObjectType, Point) {
+        let mut distance = f64::INFINITY;
+        let mut object: ObjectType = Arc::new(objects::DummyObject());
+
+        for obj in self.tracing_objs.iter() {
+            match obj.find_intersection(start, dir) {
+                Some(dist) if dist < distance => {
+                    object = obj.clone().upcast();
+                    distance = dist;
+                }
+                _ => (),
+            };
+        }
+        match self.march_ray(start, dir, distance) {
+            Some((obj, dist)) => {
+                object = obj;
+                distance = dist;
+            }
+            None => (),
+        }
+
+        (object, start + dir * distance)
+    }
+
+    fn compute_ray(&self, start: Point, dir: Point) -> Color {
+        let (object, pos) = self.trace_ray(start, dir);
+        object.get_color(pos)
+    }
 }
 
-struct Renderer {
-    scene: Scene,
+struct Renderer<'a> {
+    scene: Scene<'a>,
     cam: Camera,
     fov: f64,
     resolution: (usize, usize),
 }
-impl Renderer {
+impl<'a> Renderer<'a> {
     fn i32_res(&self) -> (i32, i32) {
         (self.resolution.0 as i32, self.resolution.1 as i32)
     }
@@ -105,7 +159,7 @@ impl Renderer {
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
-            line.push(self.scene.trace_ray(self.cam.pos, ray_dir));
+            line.push(self.scene.compute_ray(self.cam.pos, ray_dir));
         }
         line
     }
@@ -132,15 +186,34 @@ impl Renderer {
     }
 }
 
+fn open_image(path: &str) {
+    match {
+        if cfg!(windows) {
+            Some("C:/Windows/explorer.exe")
+        } else if cfg!(unix) {
+            Some("xdg-open")
+        } else {
+            None
+        }
+    } {
+        Some(opener) => {
+            Command::new(opener).arg(path).spawn().unwrap();
+        }
+        None => (),
+    }
+}
+
 fn main() {
     let renderer = Renderer {
-        scene: Scene {
-            objects: vec![Arc::new(objects::Room {
+        scene: Scene::new(
+            vec![],
+            vec![],
+            vec![Arc::new(objects::TracingRoom {
                 size: 100.0,
                 square_size: 20.0,
                 colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
             })],
-        },
+        ),
         cam: Camera::from_angles(
             Point {
                 x: 0.0,
@@ -156,22 +229,5 @@ fn main() {
 
     let path = "image.png";
     renderer.render_and_save(path);
-
-    match {
-        if cfg!(windows) {
-            Some("C:/Windows/explorer.exe")
-        } else if cfg!(unix) {
-            Some("xdg-open")
-        } else {
-            None
-        }
-    } {
-        Some(opener) => {
-            Command::new(opener)
-                .arg(path)
-                .output()
-                .unwrap();
-        }
-        None => {}
-    }
+    open_image(path);
 }

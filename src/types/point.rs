@@ -1,3 +1,4 @@
+use super::Vector;
 use std::ops::{Add, BitXor, Div, Mul, Neg, Shr, Sub};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -14,11 +15,13 @@ impl Point {
             z: 0.0,
         }
     }
-    pub fn abs(self) -> f64 {
-        (self * self).sqrt()
-    }
     pub fn dist(self, rhs: Self) -> f64 {
         (self >> rhs).abs()
+    }
+}
+impl Vector {
+    pub fn abs(self) -> f64 {
+        (self * self).sqrt()
     }
     #[allow(illegal_floating_point_literal_pattern)]
     pub fn normalize(self) -> Self {
@@ -37,7 +40,16 @@ impl Point {
             z: self.x * rhs.y - self.y * rhs.x,
         }
     }
+    ///pairwise coordinate multiplication
+    pub fn pmul(self, rhs: Self) -> Self {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
+    }
 }
+
 impl From<Point> for [f64; 3] {
     fn from(p: Point) -> Self {
         [p.x, p.y, p.z]
@@ -45,7 +57,7 @@ impl From<Point> for [f64; 3] {
 }
 impl Add for Point {
     type Output = Self;
-    fn add(self, rhs: Self) -> Self {
+    fn add(self, rhs: Vector) -> Self {
         Self {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
@@ -55,7 +67,7 @@ impl Add for Point {
 }
 impl Sub for Point {
     type Output = Self;
-    fn sub(self, rhs: Self) -> Self {
+    fn sub(self, rhs: Vector) -> Self {
         Self {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
@@ -63,9 +75,9 @@ impl Sub for Point {
         }
     }
 }
-impl Mul<f64> for Point {
-    type Output = Self;
-    fn mul(self, rhs: f64) -> Self {
+impl Mul<f64> for Vector {
+    type Output = Vector;
+    fn mul(self, rhs: f64) -> Vector {
         Self {
             x: self.x * rhs,
             y: self.y * rhs,
@@ -73,9 +85,9 @@ impl Mul<f64> for Point {
         }
     }
 }
-impl Div<f64> for Point {
-    type Output = Self;
-    fn div(self, rhs: f64) -> Self {
+impl Div<f64> for Vector {
+    type Output = Vector;
+    fn div(self, rhs: f64) -> Vector {
         Self {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -83,28 +95,28 @@ impl Div<f64> for Point {
         }
     }
 }
-impl Neg for Point {
+impl Neg for Vector {
     type Output = Self;
     fn neg(self) -> Self {
         self * -1.0
     }
 }
 
-impl Mul for Point {
+impl Mul for Vector {
     type Output = f64;
     fn mul(self, rhs: Self) -> f64 {
         self.scalar(rhs)
     }
 }
-impl BitXor for Point {
+impl BitXor for Vector {
     type Output = Self;
     fn bitxor(self, rhs: Self) -> Self {
         self.cross(rhs)
     }
 }
 impl Shr for Point {
-    type Output = Self;
-    fn shr(self, rhs: Self) -> Self {
+    type Output = Vector;
+    fn shr(self, rhs: Self) -> Vector {
         rhs - self
     }
 }

@@ -9,11 +9,11 @@ pub use color::{Color, RawColor};
 mod matrix;
 pub use matrix::Matrix;
 
+pub mod object_types;
+pub use object_types::{MarchingObjectType, MetaTracingObjectType, ObjectType, TracingObjectType};
+
 pub mod objects;
+
+pub type Vector = Point;
 pub type Coord = (usize, usize);
-
-pub type MarchingObjectType = Arc<dyn objects::MarchingObject>;
-pub type TracingObjectType = Arc<dyn objects::TracingObject>;
-pub type ObjectType = Arc<dyn objects::Object>;
-
 pub const EPSILON: f64 = 0.00000001;

@@ -10,6 +10,12 @@ pub struct Color {
     b: f64,
 }
 impl Color {
+    pub const ERR_COLOR: Color = Color {
+        r: 0.0,
+        g: 255.0,
+        b: 0.0,
+    };
+
     fn cut_f64(n: f64) -> f64 {
         const MIN: f64 = 0.0;
         const MAX: f64 = 255.0;

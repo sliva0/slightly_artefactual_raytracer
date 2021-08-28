@@ -1,55 +1,29 @@
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use super::{Color, Point};
 
-pub trait Upcast {
-    fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
-    where
-        Self: 'a;
-}
-impl<T: Object> Upcast for T {
-    fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
-    where
-        Self: 'a,
-    {
-        self
+use super::object_types::{
+    MarchingObject, MetaTracingObject, Object, TracingObject, TracingObjectType,
+};
+
+pub struct DummyObject();
+
+impl Object for DummyObject {
+    fn get_color(&self, _pos: Point) -> Color {
+        Color::ERR_COLOR
+    }
+    fn get_normal(&self, _pos: Point, _eps: f64) -> Point {
+        Point::new()
     }
 }
 
-pub trait Object: Upcast {
-    fn get_color(&self, pos: Point) -> Color;
-    fn get_normal(&self, pos: Point, eps: f64) -> Point;
-    //fn get_material(&self, pos: Point) -> Material;
-}
-
-pub trait MarchingObject: Object {
-    fn check_sdf(&self, pos: Point) -> f64;
-
-    fn sdf_derivative(&self, pos: Point, delta: Point) -> f64 {
-        self.check_sdf(pos + delta) - self.check_sdf(pos - delta)
-    }
-
-    fn get_normal(&self, pos: Point, eps: f64) -> Point {
-        let p0 = Point::new();
-        Point {
-            x: self.sdf_derivative(pos, Point { x: eps, ..p0 }),
-            y: self.sdf_derivative(pos, Point { y: eps, ..p0 }),
-            z: self.sdf_derivative(pos, Point { z: eps, ..p0 }),
-        }
-    }
-}
-
-pub trait TracingObject: Object {
-    fn find_intersection(&self, pos: Point) -> f64;
-}
-
-pub struct Room {
+pub struct MarchingRoom {
     pub size: f64,
     pub square_size: f64,
     pub colors: (Color, Color),
 }
 
-impl Object for Room {
+impl Object for MarchingRoom {
     fn get_color(&self, pos: Point) -> Color {
         let arr: [f64; 3] = pos.into();
         let sum: i32 = arr
@@ -67,25 +41,174 @@ impl Object for Room {
     }
 }
 
-impl MarchingObject for Room {
+impl MarchingObject for MarchingRoom {
     fn check_sdf(&self, pos: Point) -> f64 {
         let arr: [f64; 3] = pos.into();
         self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
     }
 }
 
-struct Plane {
+type PointTuple = (Point, Point, Point);
+
+fn pair_with<F: Fn(Point, Point) -> T, T>(p: PointTuple, f: F) -> (T, T, T) {
+    (f(p.0, p.1), f(p.1, p.2), f(p.2, p.0))
+}
+
+pub struct Plane {
     ///plane normal
     n: Point,
-    ///d from plane equation (ax+by+cz+d=0), plane shift
+    ///d from plane equation (ax + by + cz + d = 0), plane shift
     d: f64,
 }
 impl Plane {
-    fn new(v1: Point, v2: Point, v3: Point) -> Self {
-        let n = (v1 >> v2) ^ (v1 >> v3);
-        Self {
-            n,
-            d: 0.0, //-n.scalar_mul(v1),
+    fn new(v: PointTuple) -> Self {
+        let n = ((v.0 >> v.1) ^ (v.0 >> v.2)).normalize();
+        Self { n, d: -n * v.0 }
+    }
+    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+        #[allow(illegal_floating_point_literal_pattern)]
+        let dist = match dir * self.n {
+            0.0 => return None,
+            d => -(start * self.n + self.d) / d,
+        };
+
+        if dist <= 0.0 {
+            None
+        } else {
+            Some(dist)
         }
+    }
+}
+
+struct Polygon {
+    ///vertices tuple
+    v: PointTuple,
+    ///edge vectors tuple
+    e: PointTuple,
+    plane: Plane,
+}
+impl Polygon {
+    fn new(v: PointTuple) -> Self {
+        Self {
+            v,
+            e: pair_with(v, |v1, v2| v1 >> v2),
+            plane: Plane::new(v),
+        }
+    }
+    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+        let dist = self.plane.find_intersection(start, dir)?;
+        let pos = start + dir * dist;
+
+        let m = pair_with(
+            (
+                self.e.0 ^ (self.v.0 >> pos),
+                self.e.1 ^ (self.v.1 >> pos),
+                self.e.2 ^ (self.v.2 >> pos),
+            ),
+            |v1, v2| v1 * v2,
+        );
+        if m.0.min(m.1).min(m.2) >= 0.0 {
+            Some(dist)
+        } else {
+            None
+        }
+    }
+    fn get_normal(&self) -> Point {
+        self.plane.n
+    }
+}
+
+pub struct ObjectPolygon<T: MetaTracingObject> {
+    p: Polygon,
+    obj: Weak<T>,
+}
+
+impl<'a, T: MetaTracingObject + 'a> ObjectPolygon<T> {
+    fn collect_cuboid_face(
+        obj: Weak<T>,
+        shift: Point,
+        dir: Point,
+        sides: (Point, Point),
+    ) -> Vec<Arc<dyn TracingObject + 'a>> {
+        let center = shift + dir;
+        let c = (
+            center + sides.0 + sides.1,
+            center + sides.0 - sides.1,
+            center - sides.0 - sides.1,
+            center - sides.0 + sides.1,
+        );
+        vec![
+            Arc::new(Self {
+                p: Polygon::new((c.0, c.1, c.2)),
+                obj: obj.clone(),
+            }),
+            Arc::new(Self {
+                p: Polygon::new((c.2, c.3, c.0)),
+                obj: obj.clone(),
+            }),
+        ]
+    }
+}
+impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
+    fn get_color(&self, pos: Point) -> Color {
+        match self.obj.upgrade() {
+            Some(metaobj) => metaobj.get_color(pos),
+            None => Color::ERR_COLOR,
+        }
+    }
+    fn get_normal(&self, _pos: Point, _eps: f64) -> Point {
+        self.p.get_normal()
+    }
+}
+impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
+    fn find_intersection(&self, start: Point, dir: Point) -> Option<f64> {
+        self.p.find_intersection(start, dir)
+    }
+}
+
+pub struct TracingRoom {
+    pub size: f64,
+    pub square_size: f64,
+    pub colors: (Color, Color),
+}
+
+impl TracingRoom {}
+impl MetaTracingObject for TracingRoom {
+    fn get_color(&self, pos: Point) -> Color {
+        let arr: [f64; 3] = pos.into();
+        let sum: i32 = arr
+            .iter()
+            .map(|x| ((x + self.size) / self.square_size).floor() as i32)
+            .sum();
+        match sum % 2 {
+            1 => self.colors.0,
+            _ => self.colors.1,
+        }
+    }
+
+    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+        let mut objects = Vec::with_capacity(12);
+
+        let p0 = Point::new();
+        let pairs = pair_with(
+            (
+                Point { x: 1.0, ..p0 },
+                Point { y: 1.0, ..p0 },
+                Point { z: 1.0, ..p0 },
+            ),
+            |p1, p2| (p1, p2),
+        );
+        for (i, j) in [pairs.0, pairs.1, pairs.2] {
+            for (dir, side) in [(i, j), (-i, -j)] {
+                let dir = dir * self.size;
+                objects.extend(ObjectPolygon::collect_cuboid_face(
+                    Arc::downgrade(&self),
+                    p0,
+                    dir,
+                    (side * self.size, (dir ^ side)),
+                ));
+            }
+        }
+        objects
     }
 }
