@@ -1,5 +1,6 @@
-use std::{process::Command, thread};
+use std::process::Command;
 
+use crossbeam_utils::thread;
 use image::ImageBuffer;
 
 mod types;
@@ -155,7 +156,7 @@ impl<'a> Renderer<'a> {
     }
 
     fn render_line(&self, line_num: usize, line: &mut Vec<Color>) {
-        let (lines, columns) = self.resolution;
+        let (columns, lines) = self.resolution;
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
@@ -164,21 +165,22 @@ impl<'a> Renderer<'a> {
         println!("line: {} / {}", line_num + 1, lines);
     }
 
-    fn render(self: Arc<Self>) -> Vec<Vec<Color>> {
+    fn render(&self) -> Vec<Vec<Color>> {
         let lines = self.resolution.1;
         let mut image = Vec::with_capacity(lines);
         image.resize_with(lines, Vec::new);
 
-        for (i, line) in image.iter_mut().enumerate() {
-            let sref = self.clone();
-            thread::spawn(move || sref.render_line(i, line))
-                .join()
-                .unwrap();
-        }
+        thread::scope(|scope| {
+            for (line_num, line) in image.iter_mut().enumerate() {
+                scope.spawn(move |_| self.render_line(line_num, line));
+            }
+        })
+        .unwrap();
+
         image
     }
 
-    fn render_and_save(self: Arc<Self>, path: &str) {
+    fn render_and_save(&self, path: &str) {
         let image = self.render();
         let (x, y) = self.resolution;
 
@@ -207,7 +209,7 @@ fn open_image(path: &str) {
 }
 
 fn main() {
-    let renderer = Arc::new(Renderer {
+    let renderer = Renderer {
         scene: Scene::new(
             vec![],
             vec![],
@@ -228,7 +230,7 @@ fn main() {
         ),
         fov: 60.0,
         resolution: (640, 360),
-    });
+    };
 
     let path = "image.png";
     renderer.render_and_save(path);
