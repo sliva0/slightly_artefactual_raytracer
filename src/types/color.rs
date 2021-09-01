@@ -1,5 +1,5 @@
 use image::Rgb;
-use std::ops::{Add, Mul};
+use std::ops::{Add, AddAssign, Mul, MulAssign};
 
 pub type RawColor = Rgb<u8>;
 
@@ -56,6 +56,11 @@ impl Add for Color {
         }
     }
 }
+impl AddAssign<Color> for Color {
+    fn add_assign(&mut self, rhs: Color) {
+        *self = *self + rhs;
+    }
+}
 impl Mul<f64> for Color {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self {
@@ -64,6 +69,11 @@ impl Mul<f64> for Color {
             g: self.g * rhs,
             b: self.b * rhs,
         }
+    }
+}
+impl MulAssign<f64> for Color {
+    fn mul_assign(&mut self, rhs: f64) {
+        *self = *self * rhs;
     }
 }
 impl Mul for Color {

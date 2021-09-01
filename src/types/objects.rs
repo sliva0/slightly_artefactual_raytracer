@@ -75,7 +75,7 @@ impl Plane {
         if dist <= 0.0 {
             None
         } else {
-            Some(dist)
+            Some(dist - EPSILON)
         }
     }
 }
@@ -122,7 +122,6 @@ pub struct ObjectPolygon<T: MetaTracingObject> {
     p: Polygon,
     obj: Weak<T>,
 }
-
 impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
     fn collect_cuboid_face(
         obj: Weak<T>,
@@ -171,8 +170,6 @@ pub struct TracingRoom {
     pub square_size: f64,
     pub colors: (Color, Color),
 }
-
-impl TracingRoom {}
 impl MetaTracingObject for TracingRoom {
     fn get_color(&self, pos: Point) -> Color {
         let arr: [f64; 3] = pos.into();

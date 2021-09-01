@@ -23,10 +23,14 @@ pub use scene::Scene;
 mod renderer;
 pub use renderer::Renderer;
 
+mod lamp;
+pub use lamp::Lamp;
+
 pub type Vector = Point;
 pub type Coord = (usize, usize);
-pub const EPSILON: f64 = f64::EPSILON;
-pub const UP: Point = Point {
+
+pub const EPSILON: f64 = 500.0 * f64::EPSILON;
+pub const UP: Vector = Vector {
     x: 0.0,
     y: 1.0,
     z: 0.0,

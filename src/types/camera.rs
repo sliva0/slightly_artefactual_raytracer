@@ -1,4 +1,4 @@
-use super::{Matrix, Point, UP};
+use super::{Matrix, Point, Vector, UP};
 
 pub struct Camera {
     pub pos: Point,
@@ -10,10 +10,10 @@ impl Camera {
         (radians.cos() * length, radians.sin() * length)
     }
 
-    pub fn from_dir(pos: Point, dir: Point) -> Self {
+    pub fn from_dir(pos: Point, dir: Vector) -> Self {
         let view_vec = dir.normalize();
-        let side_vec = view_vec.cross(UP).normalize();
-        let up_vec = side_vec.cross(view_vec);
+        let side_vec = view_vec ^ UP;
+        let up_vec = side_vec ^ view_vec;
         Camera {
             pos: pos,
             look_op: Matrix::from_vectors(side_vec, up_vec, -view_vec),
@@ -29,6 +29,6 @@ impl Camera {
         let (zx, y) = Self::cos_sin(1.0, angle_h);
         let (z, x) = Self::cos_sin(zx, angle_w);
 
-        Self::from_dir(pos, Point { x: -x, y, z: -z })
+        Self::from_dir(pos, -Point { x, y, z })
     }
 }
