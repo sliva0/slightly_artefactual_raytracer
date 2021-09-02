@@ -30,7 +30,7 @@ impl<'a> Renderer<'a> {
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
-            line.push(self.scene.compute_ray(self.cam.pos, ray_dir));
+            line.push(self.scene.compute_ray_reflections(self.cam.pos, ray_dir));
         }
         println!("line: {} / {}", line_num + 1, lines);
     }

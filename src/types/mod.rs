@@ -1,16 +1,12 @@
 pub use std::sync::Arc;
 
-mod point;
-pub use point::Point;
-
-mod color;
-pub use color::{Color, RawColor};
-
-mod matrix;
-pub use matrix::Matrix;
+mod basic;
+pub use basic::*;
 
 mod object_types;
-pub use object_types::{MarchingObjectType, MetaTracingObjectType, ObjectType, TracingObjectType};
+pub use object_types::{
+    LightSourceType, MarchingObjectType, MetaTracingObjectType, ObjectType, TracingObjectType,
+};
 
 pub mod objects;
 
@@ -26,7 +22,6 @@ pub use renderer::Renderer;
 mod lamp;
 pub use lamp::Lamp;
 
-pub type Vector = Point;
 pub type Coord = (usize, usize);
 
 pub const EPSILON: f64 = 500.0 * f64::EPSILON;

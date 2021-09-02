@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::{Color, Point, Vector};
+use super::{Color, Material, Point, Vector, EPSILON};
 
 pub trait Upcast: Sync + Send {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
@@ -16,10 +16,14 @@ impl<T: Object> Upcast for T {
     }
 }
 
+#[allow(unused_variables)]
 pub trait Object: Upcast + Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
-    fn get_normal(&self, pos: Point, eps: f64) -> Vector;
-    //fn get_material(&self, pos: Point) -> Material;
+    fn get_normal(&self, pos: Point) -> Vector;
+    fn get_material(&self, pos: Point) -> Material;
+    fn is_shematic(&self) -> bool {
+        false
+    }
 }
 
 pub trait MarchingObject: Object {
@@ -29,12 +33,12 @@ pub trait MarchingObject: Object {
         self.check_sdf(pos + delta) - self.check_sdf(pos - delta)
     }
 
-    fn get_normal(&self, pos: Point, eps: f64) -> Vector {
+    fn get_normal(&self, pos: Point) -> Vector {
         let p0 = Point::new();
         Vector {
-            x: self.sdf_derivative(pos, Vector { x: eps, ..p0 }),
-            y: self.sdf_derivative(pos, Vector { y: eps, ..p0 }),
-            z: self.sdf_derivative(pos, Vector { z: eps, ..p0 }),
+            x: self.sdf_derivative(pos, Vector { x: EPSILON, ..p0 }),
+            y: self.sdf_derivative(pos, Vector { y: EPSILON, ..p0 }),
+            z: self.sdf_derivative(pos, Vector { z: EPSILON, ..p0 }),
         }
     }
 }
@@ -45,13 +49,14 @@ pub trait TracingObject: Object {
 
 pub trait MetaTracingObject: Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
+    fn get_material(&self, pos: Point) -> Material;
     fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
 }
 
 pub trait LightSource: Sync + Send {
     fn get_light_dir(&self, pos: Point) -> Option<Vector>;
     fn get_brightness(&self, pos: Point) -> f64;
-    fn get_color(&self, pos: Point) -> Color; 
+    fn get_color(&self, pos: Point) -> Color;
 }
 
 pub type ObjectType<'a> = Arc<dyn Object + 'a>;

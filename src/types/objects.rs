@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use super::{Color, Point, Vector, EPSILON};
+use super::{Color, Material, Point, Vector, EPSILON};
 
 use super::object_types::{
     MarchingObject, MetaTracingObject, Object, TracingObject, TracingObjectType,
@@ -12,8 +12,14 @@ impl Object for DummyObject {
     fn get_color(&self, _pos: Point) -> Color {
         Color::ERR_COLOR
     }
-    fn get_normal(&self, _pos: Point, _eps: f64) -> Vector {
+    fn get_normal(&self, _pos: Point) -> Vector {
         Vector::new()
+    }
+    fn get_material(&self, _pos: Point) -> Material {
+        Material::ERR_MATERIAL
+    }
+    fn is_shematic(&self) -> bool {
+        true
     }
 }
 
@@ -21,6 +27,7 @@ pub struct MarchingRoom {
     pub size: f64,
     pub square_size: f64,
     pub colors: (Color, Color),
+    pub material: Material,
 }
 
 impl Object for MarchingRoom {
@@ -36,8 +43,12 @@ impl Object for MarchingRoom {
         }
     }
 
-    fn get_normal(&self, pos: Point, eps: f64) -> Vector {
-        MarchingObject::get_normal(self, pos, eps)
+    fn get_normal(&self, pos: Point) -> Vector {
+        MarchingObject::get_normal(self, pos)
+    }
+
+    fn get_material(&self, _pos: Point) -> Material {
+        self.material
     }
 }
 
@@ -65,6 +76,7 @@ impl Plane {
         let n = ((v.0 >> v.1) ^ (v.0 >> v.2)).normalize();
         Self { n, d: -n * v.0 }
     }
+
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         #[allow(illegal_floating_point_literal_pattern)]
         let dist = match dir * self.n {
@@ -95,6 +107,7 @@ impl Polygon {
             plane: Plane::new(v),
         }
     }
+
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         let dist = self.plane.find_intersection(start, dir)?;
         let pos = start + dir * dist;
@@ -113,6 +126,7 @@ impl Polygon {
             None
         }
     }
+
     fn get_normal(&self) -> Vector {
         self.plane.n
     }
@@ -155,8 +169,20 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
             None => Color::ERR_COLOR,
         }
     }
-    fn get_normal(&self, _pos: Point, _eps: f64) -> Vector {
+
+    fn get_normal(&self, _pos: Point) -> Vector {
         self.p.get_normal()
+    }
+
+    fn get_material(&self, pos: Point) -> Material {
+        match self.obj.upgrade() {
+            Some(metaobj) => metaobj.get_material(pos),
+            None => Material::ERR_MATERIAL,
+        }
+    }
+
+    fn is_shematic(&self) -> bool {
+        self.obj.strong_count() == 0
     }
 }
 impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
@@ -169,6 +195,7 @@ pub struct TracingRoom {
     pub size: f64,
     pub square_size: f64,
     pub colors: (Color, Color),
+    pub material: Material,
 }
 impl MetaTracingObject for TracingRoom {
     fn get_color(&self, pos: Point) -> Color {
@@ -181,6 +208,10 @@ impl MetaTracingObject for TracingRoom {
             1 => self.colors.0,
             _ => self.colors.1,
         }
+    }
+
+    fn get_material(&self, _pos: Point) -> Material {
+        self.material
     }
 
     fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {

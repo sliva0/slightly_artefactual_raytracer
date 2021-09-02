@@ -1,12 +1,13 @@
-use super::Vector;
 use std::ops::{Add, BitXor, Div, Mul, Neg, Shr, Sub};
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
     pub z: f64,
 }
+pub type Vector = Point;
+
 impl Point {
     pub fn new() -> Self {
         Self {
@@ -30,7 +31,7 @@ impl Vector {
             abs => self / abs,
         }
     }
-    pub fn scalar(self, rhs: Self) -> f64 {
+    pub fn dot(self, rhs: Self) -> f64 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
     pub fn cross(self, rhs: Self) -> Self {
@@ -108,7 +109,7 @@ impl Neg for Vector {
 impl Mul for Vector {
     type Output = f64;
     fn mul(self, rhs: Self) -> f64 {
-        self.scalar(rhs)
+        self.dot(rhs)
     }
 }
 impl BitXor for Vector {

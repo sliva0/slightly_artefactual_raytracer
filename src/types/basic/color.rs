@@ -3,7 +3,7 @@ use std::ops::{Add, AddAssign, Mul, MulAssign};
 
 pub type RawColor = Rgb<u8>;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Color {
     r: f64,
     g: f64,
