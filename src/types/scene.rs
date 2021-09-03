@@ -19,6 +19,9 @@ impl<'a> Scene<'a> {
         for object in self.meta_objs.iter().map(Arc::clone) {
             self.tracing_objs.extend(object.build_objects());
         }
+        for lamp in self.lamps.iter().map(Arc::clone) {
+            self.tracing_objs.extend(lamp.build_schematic_objects());
+        }
     }
 
     pub fn new(
@@ -39,10 +42,13 @@ impl<'a> Scene<'a> {
         new_self
     }
 
-    fn check_sdf(&self, pos: Point) -> SdfCheckRes {
+    fn check_sdf(&self, pos: Point, check_schematic: bool) -> SdfCheckRes {
         let mut sdf = f64::INFINITY;
 
         for object in self.marching_objs.iter() {
+            if check_schematic && object.is_shematic() {
+                continue;
+            }
             sdf = sdf.min(object.check_sdf(pos));
             if sdf < EPSILON {
                 return SdfCheckRes::Hit(object.clone().upcast());
@@ -56,7 +62,7 @@ impl<'a> Scene<'a> {
 
         loop {
             let pos = start + (dir * depth);
-            match self.check_sdf(pos) {
+            match self.check_sdf(pos, true) {
                 SdfCheckRes::Hit(obj) => return Some((obj, depth)),
                 SdfCheckRes::Miss(sdf) => depth += sdf,
             }
@@ -99,14 +105,26 @@ impl<'a> Scene<'a> {
     }
 
     fn march_shadow_ray(&self, start: Point, dir: Vector, max_depth: f64) -> bool {
-        match self.march_ray(start, dir, max_depth) {
-            Some(_) => true,
-            None => false,
+        let mut depth = 0.0;
+
+        loop {
+            let pos = start + (dir * depth);
+            match self.check_sdf(pos, false) {
+                SdfCheckRes::Hit(_) => return true,
+                SdfCheckRes::Miss(sdf) => depth += sdf,
+            }
+            if depth > max_depth || depth == f64::INFINITY {
+                return false;
+            }
         }
     }
 
     fn trace_shadow_ray(&self, start: Point, dir: Vector, max_depth: f64) -> bool {
         for obj in self.tracing_objs.iter() {
+            if obj.is_shematic() {
+                continue;
+            }
+
             if let Some(dist) = obj.find_intersection(start, dir) {
                 if dist < max_depth && dist > EPSILON {
                     return true;

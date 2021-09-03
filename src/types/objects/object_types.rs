@@ -57,6 +57,7 @@ pub trait LightSource: Sync + Send {
     fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector>;
     fn get_brightness(&self, pos: Point) -> f64;
     fn get_color(&self, pos: Point) -> Color;
+    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
 }
 
 pub type ObjectType<'a> = Arc<dyn Object + 'a>;

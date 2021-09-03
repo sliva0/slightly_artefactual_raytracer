@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::*;
 
 pub struct Lamp {
@@ -15,7 +17,6 @@ impl LightSource for Lamp {
         } else {
             Some(dir)
         }
-        
     }
     fn get_brightness(&self, pos: Point) -> f64 {
         let dist = self.pos.dist(pos);
@@ -23,5 +24,15 @@ impl LightSource for Lamp {
     }
     fn get_color(&self, _pos: Point) -> Color {
         self.color
+    }
+
+    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+        vec![Arc::new(Sphere {
+            pos: self.pos,
+            radius: LAMP_RADIUS,
+            color: self.color,
+            material: Material::ERR_MATERIAL,
+            schematic: true,
+        })]
     }
 }

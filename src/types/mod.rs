@@ -15,6 +15,7 @@ pub use renderer::Renderer;
 
 pub type Coord = (usize, usize);
 
+pub const LAMP_RADIUS: f64 = 2.0;
 pub const EPSILON: f64 = 10000.0 * f64::EPSILON;
 pub const UP: Vector = Vector {
     x: 0.0,

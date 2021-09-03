@@ -4,6 +4,19 @@ pub struct Sphere {
     pub radius: f64,
     pub color: Color,
     pub material: Material,
+    pub schematic: bool,
+}
+
+impl Sphere {
+    pub fn new(pos: Point, radius: f64, color: Color, material: Material) -> Self {
+        Self {
+            pos,
+            radius,
+            color,
+            material,
+            schematic: false,
+        }
+    }
 }
 
 impl Object for Sphere {
@@ -17,6 +30,10 @@ impl Object for Sphere {
 
     fn get_material(&self, _pos: Point) -> Material {
         self.material
+    }
+
+    fn is_shematic(&self) -> bool {
+        self.schematic
     }
 }
 
@@ -42,4 +59,3 @@ impl TracingObject for Sphere {
         }
     }
 }
-

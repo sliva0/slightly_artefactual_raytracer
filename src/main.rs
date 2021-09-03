@@ -21,21 +21,21 @@ fn main() {
     let renderer = Renderer {
         scene: Scene::new(
             vec![],
-            vec![Arc::new(Sphere {
-                pos: Point {
+            vec![Arc::new(Sphere::new(
+                Point {
                     x: 75.0,
                     y: 75.0,
                     z: 75.0,
                 },
-                radius: 10.0,
-                color: Color::new(0, 100, 0),
-                material: Material {
-                    ambient: 0.1,
+                10.0,
+                Color::new(0, 100, 0),
+                Material {
+                    ambient: 0.2,
                     smoothness: 100,
-                    flare_intensity: 0.3,
+                    flare_intensity: 0.1,
                     specularity: 0.8,
                 },
-            })],
+            ))],
             vec![Arc::new(Room {
                 size: 100.0,
                 square_size: 20.0,
@@ -43,7 +43,7 @@ fn main() {
                 material: Material {
                     ambient: 0.05,
                     smoothness: 200,
-                    flare_intensity: 0.4,
+                    flare_intensity: 0.6,
                     specularity: 0.3,
                 },
             })],
@@ -55,7 +55,7 @@ fn main() {
                         z: 70.0,
                     },
                     color: Color::new(255, 255, 0),
-                    brightness: 500.0,
+                    brightness: 700.0,
                 }),
                 Arc::new(Lamp {
                     pos: Point {
@@ -67,7 +67,7 @@ fn main() {
                     brightness: 700.0,
                 }),
             ],
-            1,
+            3,
         ),
         cam: Camera::from_angles(
             Point {
@@ -79,7 +79,7 @@ fn main() {
             0.0,
         ),
         fov: 60.0,
-        resolution: (800, 450),
+        resolution: (1280, 720),
     };
 
     let path = "image.png";
