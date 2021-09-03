@@ -30,7 +30,7 @@ impl Plane {
         if dist <= 0.0 {
             None
         } else {
-            Some(dist - EPSILON)
+            Some(dist)
         }
     }
 }
@@ -64,7 +64,7 @@ impl Polygon {
             |v1, v2| v1 * v2,
         );
         if m.0.min(m.1).min(m.2) >= 0.0 {
-            Some(dist - EPSILON)
+            Some(dist)
         } else {
             None
         }

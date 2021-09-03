@@ -15,7 +15,7 @@ pub use renderer::Renderer;
 
 pub type Coord = (usize, usize);
 
-pub const EPSILON: f64 = 500.0 * f64::EPSILON;
+pub const EPSILON: f64 = 10000.0 * f64::EPSILON;
 pub const UP: Vector = Vector {
     x: 0.0,
     y: 1.0,

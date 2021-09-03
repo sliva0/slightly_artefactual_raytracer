@@ -18,8 +18,8 @@ impl Object for Room {
             .map(|x| ((x + self.size) / self.square_size).floor() as i32)
             .sum();
         match sum % 2 {
-            1 => self.colors.0,
-            _ => self.colors.1,
+            1 => self.colors.1,
+            _ => self.colors.0,
         }
     }
 

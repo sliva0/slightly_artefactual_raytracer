@@ -21,7 +21,21 @@ fn main() {
     let renderer = Renderer {
         scene: Scene::new(
             vec![],
-            vec![],
+            vec![Arc::new(Sphere {
+                pos: Point {
+                    x: 75.0,
+                    y: 75.0,
+                    z: 75.0,
+                },
+                radius: 10.0,
+                color: Color::new(0, 100, 0),
+                material: Material {
+                    ambient: 0.1,
+                    smoothness: 100,
+                    flare_intensity: 0.3,
+                    specularity: 0.8,
+                },
+            })],
             vec![Arc::new(Room {
                 size: 100.0,
                 square_size: 20.0,
@@ -36,24 +50,24 @@ fn main() {
             vec![
                 Arc::new(Lamp {
                     pos: Point {
-                        x: -70.0,
+                        x: 60.0,
                         y: 60.0,
-                        z: -60.0,
+                        z: 70.0,
                     },
                     color: Color::new(255, 255, 0),
-                    brightness: 700.0,
+                    brightness: 500.0,
                 }),
                 Arc::new(Lamp {
                     pos: Point {
-                        x: -60.0,
+                        x: 80.0,
                         y: 80.0,
-                        z: -80.0,
+                        z: 60.0,
                     },
                     color: Color::new(255, 255, 255),
                     brightness: 700.0,
                 }),
             ],
-            0,
+            1,
         ),
         cam: Camera::from_angles(
             Point {
@@ -61,7 +75,7 @@ fn main() {
                 y: 70.0,
                 z: 0.0,
             },
-            -30.0,
+            150.0,
             0.0,
         ),
         fov: 60.0,
