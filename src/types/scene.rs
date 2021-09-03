@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use super::{
-    objects::DummyObject, Color, LightSourceType, MarchingObjectType, MetaTracingObjectType,
-    ObjectType, Point, TracingObjectType, Vector, EPSILON,
-};
+use super::*;
 
 enum SdfCheckRes<'a> {
     Miss(f64),
@@ -75,13 +72,52 @@ impl<'a> Scene<'a> {
 
         for obj in self.tracing_objs.iter() {
             if let Some(dist) = obj.find_intersection(start, dir) {
-                if dist < distance && dist > 0.0 {
+                if dist < distance && dist > EPSILON {
                     object_and_dist = Some((obj.clone().upcast(), dist));
                     distance = dist;
                 }
             }
         }
         object_and_dist
+    }
+
+    fn compute_ray(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
+        let mut object: ObjectType = Arc::new(DummyObject());
+        let mut distance = f64::INFINITY;
+
+        if let Some((obj, dist)) = self.trace_ray(start, dir) {
+            object = obj;
+            distance = dist;
+        }
+        if let Some((obj, dist)) = self.march_ray(start, dir, distance) {
+            object = obj;
+            distance = dist;
+        }
+
+        let pos = start + dir * distance;
+        (object, pos)
+    }
+
+    fn march_shadow_ray(&self, start: Point, dir: Vector, max_depth: f64) -> bool {
+        match self.march_ray(start, dir, max_depth) {
+            Some(_) => true,
+            None => false,
+        }
+    }
+
+    fn trace_shadow_ray(&self, start: Point, dir: Vector, max_depth: f64) -> bool {
+        for obj in self.tracing_objs.iter() {
+            if let Some(dist) = obj.find_intersection(start, dir) {
+                if dist < max_depth && dist > EPSILON {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub fn compute_shadow_ray(&self, start: Point, dir: Vector, max_depth: f64) -> bool {
+        self.march_shadow_ray(start, dir, max_depth) || self.trace_shadow_ray(start, dir, max_depth)
     }
 
     fn compute_lightning(&self, object: ObjectType, pos: Point, dir: Vector) -> Color {
@@ -114,23 +150,6 @@ impl<'a> Scene<'a> {
             }
         }
         final_color
-    }
-
-    fn compute_ray(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
-        let mut object: ObjectType = Arc::new(DummyObject());
-        let mut distance = f64::INFINITY;
-
-        if let Some((obj, dist)) = self.trace_ray(start, dir) {
-            object = obj;
-            distance = dist;
-        }
-        if let Some((obj, dist)) = self.march_ray(start, dir, distance) {
-            object = obj;
-            distance = dist;
-        }
-
-        let pos = start + dir * distance;
-        (object, pos)
     }
 
     pub fn compute_ray_reflections(&self, mut start: Point, mut dir: Vector) -> Color {

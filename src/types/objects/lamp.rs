@@ -8,8 +8,14 @@ pub struct Lamp {
 
 impl LightSource for Lamp {
     fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
-        //scene.compute_ray(start, dir);
-        Some((self.pos >> pos).normalize())
+        let dir = (self.pos >> pos).normalize();
+        let dist = self.pos.dist(pos);
+        if scene.compute_shadow_ray(pos, -dir, dist) {
+            None
+        } else {
+            Some(dir)
+        }
+        
     }
     fn get_brightness(&self, pos: Point) -> f64 {
         let dist = self.pos.dist(pos);
