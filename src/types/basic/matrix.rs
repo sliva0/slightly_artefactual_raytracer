@@ -1,5 +1,6 @@
-use super::Vector;
 use std::ops::Mul;
+
+use super::Vector;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Matrix(Vector, Vector, Vector);

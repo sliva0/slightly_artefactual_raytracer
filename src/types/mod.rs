@@ -1,14 +1,8 @@
-pub use std::sync::Arc;
-
 mod basic;
 pub use basic::*;
 
-mod object_types;
-pub use object_types::{
-    LightSourceType, MarchingObjectType, MetaTracingObjectType, ObjectType, TracingObjectType,
-};
-
-pub mod objects;
+mod objects;
+pub use objects::*;
 
 mod camera;
 pub use camera::Camera;
@@ -18,9 +12,6 @@ pub use scene::Scene;
 
 mod renderer;
 pub use renderer::Renderer;
-
-mod lamp;
-pub use lamp::Lamp;
 
 pub type Coord = (usize, usize);
 

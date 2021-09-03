@@ -1,7 +1,7 @@
 use std::{process::Command, sync::Arc};
 
 mod types;
-use types::{objects::*, *};
+use types::*;
 
 fn open_image(path: &str) {
     if let Some(opener) = {
@@ -22,15 +22,15 @@ fn main() {
         scene: Scene::new(
             vec![],
             vec![],
-            vec![Arc::new(TracingRoom {
+            vec![Arc::new(Room {
                 size: 100.0,
                 square_size: 20.0,
                 colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
                 material: Material {
                     ambient: 0.05,
                     smoothness: 200,
-                    flare_intensity: 0.5,
-                    specularity: 0.2,
+                    flare_intensity: 0.4,
+                    specularity: 0.3,
                 },
             })],
             vec![

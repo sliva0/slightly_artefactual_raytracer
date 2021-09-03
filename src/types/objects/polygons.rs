@@ -1,67 +1,10 @@
 use std::sync::{Arc, Weak};
 
-use super::{Color, Material, Point, Vector, EPSILON};
-
-use super::object_types::{
-    MarchingObject, MetaTracingObject, Object, TracingObject, TracingObjectType,
-};
-
-pub struct DummyObject();
-
-impl Object for DummyObject {
-    fn get_color(&self, _pos: Point) -> Color {
-        Color::ERR_COLOR
-    }
-    fn get_normal(&self, _pos: Point) -> Vector {
-        Vector::new()
-    }
-    fn get_material(&self, _pos: Point) -> Material {
-        Material::ERR_MATERIAL
-    }
-    fn is_shematic(&self) -> bool {
-        true
-    }
-}
-
-pub struct MarchingRoom {
-    pub size: f64,
-    pub square_size: f64,
-    pub colors: (Color, Color),
-    pub material: Material,
-}
-
-impl Object for MarchingRoom {
-    fn get_color(&self, pos: Point) -> Color {
-        let arr: [f64; 3] = pos.into();
-        let sum: i32 = arr
-            .iter()
-            .map(|x| ((x + self.size) / self.square_size).floor() as i32)
-            .sum();
-        match sum % 2 {
-            1 => self.colors.0,
-            _ => self.colors.1,
-        }
-    }
-
-    fn get_normal(&self, pos: Point) -> Vector {
-        MarchingObject::get_normal(self, pos)
-    }
-
-    fn get_material(&self, _pos: Point) -> Material {
-        self.material
-    }
-}
-
-impl MarchingObject for MarchingRoom {
-    fn check_sdf(&self, pos: Point) -> f64 {
-        let arr: [f64; 3] = pos.into();
-        self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
-    }
-}
+use super::*;
 
 type PointTuple = (Point, Point, Point);
 
-fn pair_with<F: Fn(Point, Point) -> T, T>(p: PointTuple, f: F) -> (T, T, T) {
+pub fn pair_with<F: Fn(Point, Point) -> T, T>(p: PointTuple, f: F) -> (T, T, T) {
     (f(p.0, p.1), f(p.1, p.2), f(p.2, p.0))
 }
 
@@ -137,7 +80,7 @@ pub struct ObjectPolygon<T: MetaTracingObject> {
     obj: Weak<T>,
 }
 impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
-    fn collect_cuboid_face(
+    pub fn collect_cuboid_face(
         obj: Weak<T>,
         shift: Vector,
         dir: Vector,
@@ -188,55 +131,5 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
 impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         self.p.find_intersection(start, dir)
-    }
-}
-
-pub struct TracingRoom {
-    pub size: f64,
-    pub square_size: f64,
-    pub colors: (Color, Color),
-    pub material: Material,
-}
-impl MetaTracingObject for TracingRoom {
-    fn get_color(&self, pos: Point) -> Color {
-        let arr: [f64; 3] = pos.into();
-        let sum: i32 = arr
-            .iter()
-            .map(|x| ((x + self.size) / self.square_size).floor() as i32)
-            .sum();
-        match sum % 2 {
-            1 => self.colors.0,
-            _ => self.colors.1,
-        }
-    }
-
-    fn get_material(&self, _pos: Point) -> Material {
-        self.material
-    }
-
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
-        let mut objects = Vec::with_capacity(12);
-
-        let p0 = Point::new();
-        let pairs = pair_with(
-            (
-                Vector { x: 1.0, ..p0 },
-                Vector { y: 1.0, ..p0 },
-                Vector { z: 1.0, ..p0 },
-            ),
-            |p1, p2| (p1, p2),
-        );
-        for (i, j) in [pairs.0, pairs.1, pairs.2] {
-            for (dir, side) in [(i, j), (-i, -j)] {
-                let dir = dir * self.size;
-                objects.extend(ObjectPolygon::collect_cuboid_face(
-                    Arc::downgrade(&self),
-                    p0,
-                    dir,
-                    (side * self.size, (dir ^ side)),
-                ));
-            }
-        }
-        objects
     }
 }

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::{Color, Material, Point, Vector, EPSILON};
+use super::*;
 
 pub trait Upcast: Sync + Send {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
@@ -54,7 +54,7 @@ pub trait MetaTracingObject: Sync + Send {
 }
 
 pub trait LightSource: Sync + Send {
-    fn get_light_dir(&self, pos: Point) -> Option<Vector>;
+    fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector>;
     fn get_brightness(&self, pos: Point) -> f64;
     fn get_color(&self, pos: Point) -> Color;
 }

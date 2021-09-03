@@ -1,4 +1,4 @@
-use super::{object_types::LightSource, Color, Point, Vector};
+use super::*;
 
 pub struct Lamp {
     pub pos: Point,
@@ -7,7 +7,8 @@ pub struct Lamp {
 }
 
 impl LightSource for Lamp {
-    fn get_light_dir(&self, pos: Point) -> Option<Vector> {
+    fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
+        //scene.compute_ray(start, dir);
         Some((self.pos >> pos).normalize())
     }
     fn get_brightness(&self, pos: Point) -> f64 {

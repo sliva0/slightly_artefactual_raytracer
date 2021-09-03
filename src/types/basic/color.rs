@@ -1,5 +1,6 @@
-use image::Rgb;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
+
+use image::Rgb;
 
 pub type RawColor = Rgb<u8>;
 

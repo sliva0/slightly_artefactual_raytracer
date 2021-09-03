@@ -95,7 +95,7 @@ impl<'a> Scene<'a> {
         let mut final_color = obj_color * mtrl.ambient;
 
         for source in self.lamps.iter() {
-            if let Some(light_dir) = source.get_light_dir(pos) {
+            if let Some(light_dir) = source.get_light_dir(self, pos) {
                 let angle_cos = -light_dir * normal;
                 if angle_cos <= 0.0 {
                     continue;

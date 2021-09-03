@@ -1,7 +1,7 @@
 use crossbeam_utils::thread;
 use image::ImageBuffer;
 
-use super::{Camera, Color, Coord, Point, Scene};
+use super::*;
 
 pub struct Renderer<'a> {
     pub scene: Scene<'a>,
