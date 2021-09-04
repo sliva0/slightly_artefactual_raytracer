@@ -28,7 +28,7 @@ fn main() {
                     z: 75.0,
                 },
                 10.0,
-                Color::new(0, 100, 0),
+                Color::new(0, 255, 0) * 0.3,
                 Material {
                     ambient: 0.2,
                     smoothness: 100,
@@ -67,7 +67,7 @@ fn main() {
                     brightness: 500.0,
                 }),
             ],
-            3,
+            4,
         ),
         cam: Camera::from_angles(
             Point {
@@ -79,7 +79,7 @@ fn main() {
             0.0,
         ),
         fov: 60.0,
-        resolution: (1280, 720),
+        resolution: (3840, 2160),
     };
 
     let path = "image.png";

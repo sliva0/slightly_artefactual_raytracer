@@ -1,3 +1,5 @@
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
+
 use crossbeam_utils::thread;
 use image::ImageBuffer;
 
@@ -25,14 +27,29 @@ impl<'a> Renderer<'a> {
         (self.cam.look_op * Point { x, y, z }).normalize()
     }
 
-    fn render_line(&self, line_num: usize, line: &mut Vec<Color>) {
-        let (columns, lines) = self.resolution;
+    fn render_line(&self, line_num: usize, line: &mut Vec<Color>, tx: SyncSender<()>) {
+        let columns = self.resolution.0;
+        let mut pixel_cnt = 0;
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
             line.push(self.scene.compute_ray_reflections(self.cam.pos, ray_dir));
+
+            pixel_cnt += 1;
+            if pixel_cnt % PORTIONS_SIZE == 0 {
+                tx.send(()).unwrap()
+            }
         }
-        println!("line: {} / {}", line_num + 1, lines);
+    }
+
+    fn progress_bar(&self, rx: Receiver<()>) {
+        let (columns, lines) = self.resolution;
+        let portion_amount = columns / PORTIONS_SIZE * lines;
+        for i in 1..=portion_amount {
+            rx.recv().unwrap();
+            println!("{} / {}", i, portion_amount);
+        }
+        println!("done");
     }
 
     fn render(&self) -> Vec<Vec<Color>> {
@@ -41,8 +58,12 @@ impl<'a> Renderer<'a> {
         image.resize_with(lines, Vec::new);
 
         thread::scope(|scope| {
+            let (tx, rx) = sync_channel(10);
+            scope.spawn(move |_| self.progress_bar(rx));
+
             for (line_num, line) in image.iter_mut().enumerate() {
-                scope.spawn(move |_| self.render_line(line_num, line));
+                let txc = tx.clone();
+                scope.spawn(move |_| self.render_line(line_num, line, txc));
             }
         })
         .unwrap();

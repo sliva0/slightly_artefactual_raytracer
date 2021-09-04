@@ -13,7 +13,7 @@ pub struct Color {
 impl Color {
     pub const ERR_COLOR: Color = Color {
         r: 0.0,
-        g: 255.0,
+        g: 0.0,
         b: 0.0,
     };
 
