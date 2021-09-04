@@ -155,13 +155,15 @@ impl<'a> Scene<'a> {
                     continue;
                 }
                 let src_color = source.get_color(pos);
+                let brightness = source.get_brightness(pos);
 
-                let diffuse_part = source.get_brightness(pos) * angle_cos;
+                let diffuse_part = brightness * angle_cos;
                 let diffuse_color = obj_color * src_color * (diffuse_part);
 
                 let half_angle_dir = (light_dir + dir).normalize();
                 let dot_prod = normal * half_angle_dir;
-                let specular_part = dot_prod.powi(mtrl.smoothness) * mtrl.flare_intensity;
+                let coef = mtrl.flare_intensity * brightness;
+                let specular_part = dot_prod.powi(mtrl.smoothness) * coef;
                 let specular_color = src_color * specular_part;
 
                 final_color += diffuse_color + specular_color;

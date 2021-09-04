@@ -32,7 +32,7 @@ fn main() {
                 Material {
                     ambient: 0.2,
                     smoothness: 100,
-                    flare_intensity: 0.1,
+                    flare_intensity: 0.3,
                     specularity: 0.8,
                 },
             ))],
@@ -55,7 +55,7 @@ fn main() {
                         z: 70.0,
                     },
                     color: Color::new(255, 255, 0),
-                    brightness: 700.0,
+                    brightness: 800.0,
                 }),
                 Arc::new(Lamp {
                     pos: Point {
@@ -64,7 +64,7 @@ fn main() {
                         z: 60.0,
                     },
                     color: Color::new(255, 255, 255),
-                    brightness: 700.0,
+                    brightness: 500.0,
                 }),
             ],
             3,

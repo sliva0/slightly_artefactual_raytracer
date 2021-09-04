@@ -54,10 +54,27 @@ pub trait MetaTracingObject: Sync + Send {
 }
 
 pub trait LightSource: Sync + Send {
-    fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector>;
-    fn get_brightness(&self, pos: Point) -> f64;
+    fn _get_light_dir(&self, pos: Point) -> Vector;
+    fn _get_brightness(&self, pos: Point) -> f64;
+
+    fn get_dist(&self, pos: Point) -> f64;
     fn get_color(&self, pos: Point) -> Color;
+
     fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
+
+    fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
+        let dir = self._get_light_dir(pos);
+        let dist = self.get_dist(pos);
+        if scene.compute_shadow_ray(pos, -dir, dist) {
+            None
+        } else {
+            Some(dir)
+        }
+    }
+    fn get_brightness(&self, pos: Point) -> f64 {
+        let dist = self.get_dist(pos);
+        self._get_brightness(pos) / (dist * dist)
+    }
 }
 
 pub type ObjectType<'a> = Arc<dyn Object + 'a>;
