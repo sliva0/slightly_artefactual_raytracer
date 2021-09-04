@@ -6,11 +6,6 @@ use super::Vector;
 pub struct Matrix(Vector, Vector, Vector);
 
 impl Matrix {
-    pub fn _new() -> Self {
-        let p0 = Vector::new();
-        Matrix(p0, p0, p0)
-    }
-
     pub fn from_vectors(a: Vector, b: Vector, c: Vector) -> Self {
         Matrix(a, b, c)
     }

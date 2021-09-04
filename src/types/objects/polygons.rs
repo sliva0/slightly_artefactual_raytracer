@@ -2,10 +2,8 @@ use std::sync::{Arc, Weak};
 
 use super::*;
 
-type PointTuple = (Point, Point, Point);
-
-pub fn pair_with<F: Fn(Point, Point) -> T, T>(p: PointTuple, f: F) -> (T, T, T) {
-    (f(p.0, p.1), f(p.1, p.2), f(p.2, p.0))
+pub fn pair_with<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
+    [f(p[0], p[1]), f(p[1], p[2]), f(p[2], p[0])]
 }
 
 pub struct Plane {
@@ -15,9 +13,9 @@ pub struct Plane {
     d: f64,
 }
 impl Plane {
-    fn new(v: PointTuple) -> Self {
-        let n = ((v.0 >> v.1) ^ (v.0 >> v.2)).normalize();
-        Self { n, d: -n * v.0 }
+    fn new(v: [Point; 3]) -> Self {
+        let n = ((v[0] >> v[1]) ^ (v[0] >> v[2])).normalize();
+        Self { n, d: -n * v[0] }
     }
 
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
@@ -36,14 +34,14 @@ impl Plane {
 }
 
 struct Polygon {
-    ///vertices tuple
-    v: PointTuple,
-    ///edge vectors tuple
-    e: PointTuple,
+    ///vertices
+    v: [Point; 3],
+    ///edge vectors
+    e: [Point; 3],
     plane: Plane,
 }
 impl Polygon {
-    fn new(v: PointTuple) -> Self {
+    fn new(v: [Point; 3]) -> Self {
         Self {
             v,
             e: pair_with(v, |v1, v2| v1 >> v2),
@@ -56,14 +54,14 @@ impl Polygon {
         let pos = start + dir * dist;
 
         let m = pair_with(
-            (
-                self.e.0 ^ (self.v.0 >> pos),
-                self.e.1 ^ (self.v.1 >> pos),
-                self.e.2 ^ (self.v.2 >> pos),
-            ),
+            [
+                self.e[0] ^ (self.v[0] >> pos),
+                self.e[1] ^ (self.v[1] >> pos),
+                self.e[2] ^ (self.v[2] >> pos),
+            ],
             |v1, v2| v1 * v2,
         );
-        if m.0.min(m.1).min(m.2) >= 0.0 {
+        if m[0].min(m[1]).min(m[2]) >= 0.0 {
             Some(dist)
         } else {
             None
@@ -90,17 +88,17 @@ impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
         let sides = (sides.0 * (1.0 + EPSILON), sides.1 * (1.0 + EPSILON));
         let c = (
             center + sides.0 + sides.1,
-            center + sides.0 - sides.1,
-            center - sides.0 - sides.1,
             center - sides.0 + sides.1,
+            center - sides.0 - sides.1,
+            center + sides.0 - sides.1,
         );
         vec![
             Arc::new(Self {
-                p: Polygon::new((c.0, c.1, c.2)),
+                p: Polygon::new([c.0, c.1, c.2]),
                 obj: obj.clone(),
             }),
             Arc::new(Self {
-                p: Polygon::new((c.2, c.3, c.0)),
+                p: Polygon::new([c.2, c.3, c.0]),
                 obj: obj.clone(),
             }),
         ]

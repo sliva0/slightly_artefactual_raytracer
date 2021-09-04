@@ -9,8 +9,9 @@ pub use lamp::Lamp;
 pub mod polygons;
 pub use polygons::ObjectPolygon;
 
+mod cuboid;
 mod dummy_object;
 mod room;
 mod sphere;
 
-pub use {dummy_object::DummyObject, room::Room, sphere::Sphere};
+pub use {cuboid::Cuboid, dummy_object::DummyObject, room::Room, sphere::Sphere};

@@ -9,13 +9,11 @@ pub struct Point {
 pub type Vector = Point;
 
 impl Point {
-    pub fn new() -> Self {
-        Self {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        }
-    }
+    pub const P0: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
     pub fn dist(self, rhs: Self) -> f64 {
         (self >> rhs).abs()
     }
@@ -27,7 +25,7 @@ impl Vector {
     #[allow(illegal_floating_point_literal_pattern)]
     pub fn normalize(self) -> Self {
         match self.abs() {
-            0.0 => Self::new(),
+            0.0 => Self::P0,
             abs => self / abs,
         }
     }

@@ -21,32 +21,35 @@ fn main() {
     let renderer = Renderer {
         scene: Scene::new(
             vec![],
-            vec![Arc::new(Sphere::new(
-                Point {
-                    x: 75.0,
-                    y: 75.0,
-                    z: 75.0,
-                },
-                10.0,
-                Color::new(0, 255, 0) * 0.3,
-                Material {
-                    ambient: 0.2,
-                    smoothness: 100,
-                    flare_intensity: 0.3,
-                    specularity: 0.8,
-                },
-            ))],
-            vec![Arc::new(Room {
-                size: 100.0,
-                square_size: 20.0,
-                colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
-                material: Material {
-                    ambient: 0.05,
-                    smoothness: 200,
-                    flare_intensity: 0.6,
-                    specularity: 0.3,
-                },
-            })],
+            vec![],
+            vec![
+                Arc::new(Room {
+                    size: 100.0,
+                    square_size: 20.0,
+                    colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
+                    material: Material {
+                        ambient: 0.05,
+                        smoothness: 200,
+                        flare_intensity: 0.6,
+                        specularity: 0.3,
+                    },
+                }),
+                Arc::new(Cuboid {
+                    pos: Point {
+                        x: 75.0,
+                        y: 75.0,
+                        z: 75.0,
+                    },
+                    size: 10.0,
+                    color: Color::new(0, 255, 0) * 0.3,
+                    material: Material {
+                        ambient: 0.2,
+                        smoothness: 100,
+                        flare_intensity: 0.3,
+                        specularity: 0.8,
+                    },
+                }),
+            ],
             vec![
                 Arc::new(Lamp {
                     pos: Point {
@@ -67,7 +70,7 @@ fn main() {
                     brightness: 500.0,
                 }),
             ],
-            4,
+            0,
         ),
         cam: Camera::from_angles(
             Point {
@@ -79,7 +82,7 @@ fn main() {
             0.0,
         ),
         fov: 60.0,
-        resolution: (3840, 2160),
+        resolution: (640, 360), //(3840, 2160),
     };
 
     let path = "image.png";

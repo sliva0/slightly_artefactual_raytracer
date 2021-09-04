@@ -34,11 +34,10 @@ pub trait MarchingObject: Object {
     }
 
     fn get_normal(&self, pos: Point) -> Vector {
-        let p0 = Point::new();
         Vector {
-            x: self.sdf_derivative(pos, Vector { x: EPSILON, ..p0 }),
-            y: self.sdf_derivative(pos, Vector { y: EPSILON, ..p0 }),
-            z: self.sdf_derivative(pos, Vector { z: EPSILON, ..p0 }),
+            x: self.sdf_derivative(pos, Vector { x: EPSILON, ..Vector::P0 }),
+            y: self.sdf_derivative(pos, Vector { y: EPSILON, ..Vector::P0 }),
+            z: self.sdf_derivative(pos, Vector { z: EPSILON, ..Vector::P0 }),
         }
     }
 }

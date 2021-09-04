@@ -3,24 +3,16 @@ use std::sync::Arc;
 use super::polygons::pair_with;
 use super::*;
 
-pub struct Room {
+pub struct Cuboid {
+    pub pos: Point,
     pub size: f64,
-    pub square_size: f64,
-    pub colors: (Color, Color),
+    pub color: Color,
     pub material: Material,
 }
 
-impl Object for Room {
-    fn get_color(&self, pos: Point) -> Color {
-        let arr: [f64; 3] = pos.into();
-        let sum: i32 = arr
-            .iter()
-            .map(|x| ((x + self.size) / self.square_size).floor() as i32)
-            .sum();
-        match sum % 2 {
-            1 => self.colors.1,
-            _ => self.colors.0,
-        }
+impl Object for Cuboid {
+    fn get_color(&self, _pos: Point) -> Color {
+        self.color
     }
 
     fn get_normal(&self, pos: Point) -> Vector {
@@ -32,14 +24,14 @@ impl Object for Room {
     }
 }
 
-impl MarchingObject for Room {
+impl MarchingObject for Cuboid {
     fn check_sdf(&self, pos: Point) -> f64 {
         let arr: [f64; 3] = pos.into();
         self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
     }
 }
 
-impl MetaTracingObject for Room {
+impl MetaTracingObject for Cuboid {
     fn get_color(&self, pos: Point) -> Color {
         Object::get_color(self, pos)
     }
@@ -59,15 +51,14 @@ impl MetaTracingObject for Room {
             ],
             |p1, p2| (p1, p2),
         );
-        let size = -self.size;
         for (i, j) in pairs {
             for (dir, side) in [(i, j), (-i, -j)] {
-                let dir = dir * size;
+                let dir = dir * self.size;
                 objects.extend(ObjectPolygon::collect_cuboid_face(
                     Arc::downgrade(&self),
-                    Point::P0,
+                    self.pos,
                     dir,
-                    (side * size, (dir ^ side)),
+                    (side * self.size, (dir ^ side)),
                 ));
             }
         }
