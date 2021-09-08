@@ -5,9 +5,21 @@ use super::*;
 
 pub struct Cuboid {
     pub pos: Point,
-    pub size: f64,
+    pub size: Point,
     pub color: Color,
     pub material: Material,
+}
+
+impl Cuboid {
+    #[allow(dead_code)]
+    pub fn new(pos: Point, size: Point, color: Color, material: Material) -> Self {
+        Self {
+            pos,
+            size,
+            color,
+            material,
+        }
+    }
 }
 
 impl Object for Cuboid {
@@ -26,8 +38,8 @@ impl Object for Cuboid {
 
 impl MarchingObject for Cuboid {
     fn check_sdf(&self, pos: Point) -> f64 {
-        let arr: [f64; 3] = pos.into();
-        self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
+        let arr: [f64; 3] = (pos.pdiv(self.size)).into();
+        arr.iter().fold(0f64, |a, b| a.max(b.abs()))
     }
 }
 
@@ -45,20 +57,25 @@ impl MetaTracingObject for Cuboid {
 
         let pairs = pair_with(
             [
-                Vector { x: 1.0, ..Vector::P0 },
-                Vector { y: 1.0, ..Vector::P0 },
-                Vector { z: 1.0, ..Vector::P0 },
+                Vector { x: 1.0, ..ORIGIN },
+                Vector { y: 1.0, ..ORIGIN },
+                Vector { z: 1.0, ..ORIGIN },
             ],
             |p1, p2| (p1, p2),
         );
         for (i, j) in pairs {
             for (dir, side) in [(i, j), (-i, -j)] {
-                let dir = dir * self.size;
+                let dir = dir.pmul(self.size);
+                let sides = (
+                    side.pmul(self.size),
+                    (dir ^ side).normalize().pmul(self.size),
+                );
+
                 objects.extend(ObjectPolygon::collect_cuboid_face(
                     Arc::downgrade(&self),
                     self.pos,
                     dir,
-                    (side * self.size, (dir ^ side)),
+                    sides,
                 ));
             }
         }

@@ -53,9 +53,9 @@ impl MetaTracingObject for Room {
 
         let pairs = pair_with(
             [
-                Vector { x: 1.0, ..Vector::P0 },
-                Vector { y: 1.0, ..Vector::P0 },
-                Vector { z: 1.0, ..Vector::P0 },
+                Vector { x: 1.0, ..ORIGIN },
+                Vector { y: 1.0, ..ORIGIN },
+                Vector { z: 1.0, ..ORIGIN },
             ],
             |p1, p2| (p1, p2),
         );
@@ -65,7 +65,7 @@ impl MetaTracingObject for Room {
                 let dir = dir * size;
                 objects.extend(ObjectPolygon::collect_cuboid_face(
                     Arc::downgrade(&self),
-                    Point::P0,
+                    ORIGIN,
                     dir,
                     (side * size, (dir ^ side)),
                 ));

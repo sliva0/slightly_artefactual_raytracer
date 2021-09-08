@@ -8,14 +8,37 @@ pub struct Point {
 }
 pub type Vector = Point;
 
+pub const ORIGIN: Point = Point {
+    x: 0.0,
+    y: 0.0,
+    z: 0.0,
+};
+
 impl Point {
-    pub const P0: Self = Self {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-    };
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
     pub fn dist(self, rhs: Self) -> f64 {
         (self >> rhs).abs()
+    }
+    ///pairwise coordinate multiplication
+    pub fn pmul(self, rhs: Self) -> Self {
+        Self {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+        }
+    }
+    ///pairwise coordinate division
+    pub fn pdiv(self, rhs: Self) -> Self {
+        Self {
+            x: self.x / rhs.x,
+            y: self.y / rhs.y,
+            z: self.z / rhs.z,
+        }
+    }
+    pub fn sum(&self) -> f64 {
+        self.x + self.y + self.z
     }
 }
 impl Vector {
@@ -25,26 +48,18 @@ impl Vector {
     #[allow(illegal_floating_point_literal_pattern)]
     pub fn normalize(self) -> Self {
         match self.abs() {
-            0.0 => Self::P0,
+            0.0 => ORIGIN,
             abs => self / abs,
         }
     }
     pub fn dot(self, rhs: Self) -> f64 {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+        self.pmul(rhs).sum()
     }
     pub fn cross(self, rhs: Self) -> Self {
         Self {
             x: self.y * rhs.z - self.z * rhs.y,
             y: self.z * rhs.x - self.x * rhs.z,
             z: self.x * rhs.y - self.y * rhs.x,
-        }
-    }
-    ///pairwise coordinate multiplication
-    pub fn pmul(self, rhs: Self) -> Self {
-        Self {
-            x: self.x * rhs.x,
-            y: self.y * rhs.y,
-            z: self.z * rhs.z,
         }
     }
     pub fn reflect(self, rhs: Self) -> Self {

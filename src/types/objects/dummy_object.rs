@@ -7,7 +7,7 @@ impl Object for DummyObject {
         Color::ERR_COLOR
     }
     fn get_normal(&self, _pos: Point) -> Vector {
-        Vector::P0
+        ORIGIN
     }
     fn get_material(&self, _pos: Point) -> Material {
         Material::ERR_MATERIAL

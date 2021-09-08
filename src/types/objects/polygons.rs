@@ -85,7 +85,8 @@ impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
         sides: (Vector, Vector),
     ) -> Vec<TracingObjectType<'a>> {
         let center = shift + dir;
-        let sides = (sides.0 * (1.0 + EPSILON), sides.1 * (1.0 + EPSILON));
+        let eps1: f64 = 1.0 + EPSILON;
+        let sides = (sides.0 * eps1, sides.1 * eps1);
         let c = (
             center + sides.0 + sides.1,
             center - sides.0 + sides.1,

@@ -13,18 +13,18 @@ pub struct Renderer<'a> {
 }
 
 impl<'a> Renderer<'a> {
-    fn i32_res(&self) -> (i32, i32) {
-        (self.resolution.0 as i32, self.resolution.1 as i32)
+    fn f64_resolution(&self) -> (f64, f64) {
+        (self.resolution.0 as f64, self.resolution.1 as f64)
     }
 
-    fn get_ray_dir(&self, pixel: Coord) -> Point {
-        let (x, y) = (pixel.0 as i32, pixel.1 as i32);
-        let (xs, ys) = self.i32_res();
+    fn get_ray_dir(&self, pixel: Coord) -> Vector {
+        let (x, y) = (pixel.0 as f64, pixel.1 as f64);
+        let (xs, ys) = self.f64_resolution();
 
-        let (x, y) = ((x - xs / 2) as f64, -(y - ys / 2) as f64);
+        let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
         let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
 
-        (self.cam.look_op * Point { x, y, z }).normalize()
+        self.cam.rotate_ray(Vector { x, y, z }).normalize()
     }
 
     fn render_line(&self, line_num: usize, line: &mut Vec<Color>, tx: SyncSender<()>) {
@@ -58,7 +58,7 @@ impl<'a> Renderer<'a> {
         image.resize_with(lines, Vec::new);
 
         thread::scope(|scope| {
-            let (tx, rx) = sync_channel(10);
+            let (tx, rx) = sync_channel(8);
             scope.spawn(move |_| self.progress_bar(rx));
 
             for (line_num, line) in image.iter_mut().enumerate() {

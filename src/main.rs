@@ -26,63 +26,76 @@ fn main() {
                 Arc::new(Room {
                     size: 100.0,
                     square_size: 20.0,
-                    colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
+                    colors: (Color::new(80, 80, 80), Color::new(200, 200, 200)),
                     material: Material {
                         ambient: 0.05,
                         smoothness: 200,
-                        flare_intensity: 0.6,
-                        specularity: 0.3,
+                        flare_intensity: 0.7,
+                        specularity: 0.12,
                     },
                 }),
-                Arc::new(Cuboid {
-                    pos: Point {
-                        x: 75.0,
-                        y: 75.0,
-                        z: 75.0,
+                Arc::new(Cuboid::new(
+                    Point {
+                        x: -10.0,
+                        y: -50.0,
+                        z: -80.0,
                     },
-                    size: 10.0,
-                    color: Color::new(0, 255, 0) * 0.3,
-                    material: Material {
-                        ambient: 0.2,
+                    Point {
+                        x: 10.0,
+                        y: 10.0,
+                        z: 20.0,
+                    },
+                    Color::new(80, 80, 80),
+                    Material {
+                        ambient: 0.05,
                         smoothness: 100,
-                        flare_intensity: 0.3,
-                        specularity: 0.8,
+                        flare_intensity: 0.7,
+                        specularity: 0.12,
                     },
-                }),
+                )),
             ],
             vec![
                 Arc::new(Lamp {
                     pos: Point {
-                        x: 60.0,
-                        y: 60.0,
-                        z: 70.0,
+                        x: 10.0,
+                        y: -30.0,
+                        z: -52.0,
                     },
-                    color: Color::new(255, 255, 0),
-                    brightness: 800.0,
+                    color: Color::new(255, 127, 0),
+                    brightness: 3000.0,
                 }),
                 Arc::new(Lamp {
                     pos: Point {
-                        x: 80.0,
-                        y: 80.0,
-                        z: 60.0,
+                        x: -30.0,
+                        y: -30.0,
+                        z: -52.0,
                     },
-                    color: Color::new(255, 255, 255),
-                    brightness: 500.0,
+                    color: Color::new(0, 0, 255),
+                    brightness: 3000.0,
+                }),
+                Arc::new(Lamp {
+                    pos: Point {
+                        x: -10.0,
+                        y: -80.0,
+                        z: -75.0,
+                    },
+                    color: Color::new(180, 120, 255),
+                    brightness: 700.0,
                 }),
             ],
-            0,
+            3,
         ),
         cam: Camera::from_angles(
             Point {
-                x: 0.0,
-                y: 70.0,
-                z: 0.0,
+                x: -35.0,
+                y: -80.0,
+                z: 60.0,
             },
-            150.0,
-            0.0,
+            -15.0,
+            15.0,
         ),
         fov: 60.0,
-        resolution: (640, 360), //(3840, 2160),
+        resolution: (3840, 2160), //(800, 450),
     };
 
     let path = "image.png";

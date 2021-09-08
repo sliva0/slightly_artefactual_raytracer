@@ -79,7 +79,7 @@ impl<'a> Scene<'a> {
         for obj in self.tracing_objs.iter() {
             if let Some(dist) = obj.find_intersection(start, dir) {
                 if dist < distance && dist > EPSILON {
-                    object_and_dist = Some((obj.clone().upcast(), dist));
+                    object_and_dist = Some((obj.clone().upcast(), dist - EPSILON));
                     distance = dist;
                 }
             }
