@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
 use crossbeam_utils::thread;
@@ -33,7 +34,7 @@ impl<'a> Renderer<'a> {
 
         for i in 0..columns {
             let ray_dir = self.get_ray_dir((i, line_num));
-            line.push(self.scene.compute_ray_reflections(self.cam.pos, ray_dir));
+            line.push(self.scene.compute_ray(self.cam.pos, ray_dir));
 
             pixel_cnt += 1;
             if pixel_cnt % PORTIONS_SIZE == 0 {

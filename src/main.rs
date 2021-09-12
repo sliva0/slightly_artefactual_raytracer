@@ -18,7 +18,7 @@ fn open_image(path: &str) {
 }
 
 fn main() {
-    let renderer = Renderer {
+    let renderer = SubsamplingRenderer {
         scene: Scene::new(
             vec![],
             vec![],
@@ -35,16 +35,8 @@ fn main() {
                     },
                 }),
                 Arc::new(Cuboid::new(
-                    Point {
-                        x: -10.0,
-                        y: -50.0,
-                        z: -80.0,
-                    },
-                    Point {
-                        x: 10.0,
-                        y: 10.0,
-                        z: 20.0,
-                    },
+                    Point::new(-10.0, -50.0, -80.0),
+                    Point::new(10.0, 10.0, 20.0),
                     Color::new(80, 80, 80),
                     Material {
                         ambient: 0.05,
@@ -56,34 +48,23 @@ fn main() {
             ],
             vec![
                 Arc::new(Lamp {
-                    pos: Point {
-                        x: 10.0,
-                        y: -30.0,
-                        z: -52.0,
-                    },
+                    pos: Point::new(10.0, -30.0, -52.0),
                     color: Color::new(255, 127, 0),
                     brightness: 3000.0,
                 }),
                 Arc::new(Lamp {
-                    pos: Point {
-                        x: -30.0,
-                        y: -30.0,
-                        z: -52.0,
-                    },
+                    pos: Point::new(-30.0, -30.0, -52.0),
                     color: Color::new(0, 0, 255),
                     brightness: 3000.0,
                 }),
                 Arc::new(Lamp {
-                    pos: Point {
-                        x: -10.0,
-                        y: -80.0,
-                        z: -75.0,
-                    },
+                    pos: Point::new(-10.0, -80.0, -75.0),
                     color: Color::new(180, 120, 255),
                     brightness: 700.0,
                 }),
             ],
             3,
+            
         ),
         cam: Camera::from_angles(
             Point {
@@ -95,10 +76,12 @@ fn main() {
             15.0,
         ),
         fov: 60.0,
-        resolution: (3840, 2160), //(800, 450),
+        resolution: (3840, 2160),
+        subsampling_limit: 0.05,
+        supersampling_multiplier: 2,
     };
 
     let path = "image.png";
-    renderer.render_and_save(path);
+    renderer.render_and_save(path, subsampling_func(4));
     open_image(path);
 }

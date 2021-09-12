@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::sync::Arc;
 
 use super::polygons::pair_with;
@@ -11,7 +13,6 @@ pub struct Cuboid {
 }
 
 impl Cuboid {
-    #[allow(dead_code)]
     pub fn new(pos: Point, size: Point, color: Color, material: Material) -> Self {
         Self {
             pos,

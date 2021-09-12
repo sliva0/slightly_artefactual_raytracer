@@ -87,7 +87,7 @@ impl<'a> Scene<'a> {
         object_and_dist
     }
 
-    fn compute_ray(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
+    fn compute_ray_step(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
         let mut object: ObjectType = Arc::new(DummyObject());
         let mut distance = f64::INFINITY;
 
@@ -172,13 +172,13 @@ impl<'a> Scene<'a> {
         final_color
     }
 
-    pub fn compute_ray_reflections(&self, mut start: Point, mut dir: Vector) -> Color {
+    pub fn compute_ray(&self, mut start: Point, mut dir: Vector) -> Color {
         let mut final_color = Color::new(0, 0, 0);
         let mut refl_cnt = self.reflection_limit;
         let mut refl_reserve = 1.0;
 
         loop {
-            let (object, pos) = self.compute_ray(start, dir);
+            let (object, pos) = self.compute_ray_step(start, dir);
             let specularity = object.get_material(pos).specularity;
             let color = self.compute_lightning(object.clone(), pos, dir);
 

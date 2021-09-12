@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Mul, MulAssign};
+use std::{
+    iter::Sum,
+    ops::{Add, AddAssign, Div, Mul, MulAssign},
+};
 
 use image::Rgb;
 
@@ -11,9 +14,14 @@ pub struct Color {
     b: f64,
 }
 impl Color {
-    pub const ERR_COLOR: Color = Color {
+    pub const BLACK: Color = Color {
         r: 0.0,
         g: 0.0,
+        b: 0.0,
+    };
+    pub const ERR_COLOR: Color = Color {
+        r: 0.0,
+        g: 255.0,
         b: 0.0,
     };
 
@@ -45,6 +53,33 @@ impl Color {
     pub fn raw(self) -> RawColor {
         self.into()
     }
+
+    fn diff(&self, rhs: &Self) -> f64 {
+        let sub = [
+            (self.r - rhs.r).abs(),
+            (self.g - rhs.g).abs(),
+            (self.b - rhs.b).abs(),
+        ];
+        sub.iter().sum::<f64>() / (255.0 * 3.0)
+    }
+
+    pub fn colors_diff(colors: Vec<Self>) -> f64 {
+        let mut max_diff = 0f64;
+        for i in colors.iter() {
+            for j in colors.iter() {
+                max_diff = max_diff.max(i.diff(j));
+            }
+        }
+        if max_diff > 1.0 {
+            println!("max_diff: {:?}\n colors: {:?}", max_diff, colors);
+        }
+        max_diff
+    }
+
+    pub fn colors_avg(colors: Vec<Self>) -> Self {
+        let len = colors.len();
+        colors.into_iter().sum::<Color>() / len as f64
+    }
 }
 
 impl Add for Color {
@@ -57,11 +92,13 @@ impl Add for Color {
         }
     }
 }
+
 impl AddAssign<Color> for Color {
     fn add_assign(&mut self, rhs: Color) {
         *self = *self + rhs;
     }
 }
+
 impl Mul<f64> for Color {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self {
@@ -72,11 +109,24 @@ impl Mul<f64> for Color {
         }
     }
 }
+
 impl MulAssign<f64> for Color {
     fn mul_assign(&mut self, rhs: f64) {
         *self = *self * rhs;
     }
 }
+
+impl Div<f64> for Color {
+    type Output = Self;
+    fn div(self, rhs: f64) -> Self {
+        Self {
+            r: self.r / rhs,
+            g: self.g / rhs,
+            b: self.b / rhs,
+        }
+    }
+}
+
 impl Mul for Color {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self {
@@ -87,6 +137,13 @@ impl Mul for Color {
         }
     }
 }
+
+impl Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Color::BLACK, |a, b| a + b)
+    }
+}
+
 impl From<Color> for RawColor {
     fn from(color: Color) -> Self {
         let color = color.cut();

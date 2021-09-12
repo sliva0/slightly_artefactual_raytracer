@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::*;
 pub struct Sphere {
     pub pos: Point,
@@ -8,7 +10,6 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    #[allow(dead_code)]
     pub fn new(pos: Point, radius: f64, color: Color, material: Material) -> Self {
         Self {
             pos,
