@@ -87,7 +87,7 @@ impl<'a> Scene<'a> {
         object_and_dist
     }
 
-    fn compute_ray_step(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
+    fn compute_ray_trajectory(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
         let mut object: ObjectType = Arc::new(DummyObject());
         let mut distance = f64::INFINITY;
 
@@ -172,26 +172,22 @@ impl<'a> Scene<'a> {
         final_color
     }
 
-    pub fn compute_ray(&self, mut start: Point, mut dir: Vector) -> Color {
-        let mut final_color = Color::new(0, 0, 0);
-        let mut refl_cnt = self.reflection_limit;
-        let mut refl_reserve = 1.0;
+    fn compute_subray(&self, start: Point, dir: Vector, refl_limit: i32) -> Color {
+        let (object, pos) = self.compute_ray_trajectory(start, dir);
+        let specularity = object.get_material(pos).specularity;
+        let color = self.compute_lightning(object.clone(), pos, dir);
 
-        loop {
-            let (object, pos) = self.compute_ray_step(start, dir);
-            let specularity = object.get_material(pos).specularity;
-            let color = self.compute_lightning(object.clone(), pos, dir);
-
-            if refl_cnt == 0 || specularity == 0.0 {
-                return final_color + color * refl_reserve;
-            }
-            refl_cnt -= 1;
-            let refl_coef = refl_reserve * (1.0 - specularity);
-            refl_reserve -= refl_coef;
-            final_color += color * refl_coef;
-
-            start = pos;
-            dir = dir.reflect(object.get_normal(pos));
+        if refl_limit == 0 || specularity == 0.0 {
+            color
+        } else {
+            let start = pos;
+            let dir = dir.reflect(object.get_normal(pos));
+            let refl_limit = refl_limit - 1;
+            color * (1.0 - specularity) + self.compute_subray(start, dir, refl_limit) * specularity
         }
+    }
+
+    pub fn compute_ray(&self, start: Point, dir: Vector) -> Color {
+        self.compute_subray(start, dir, self.reflection_limit)
     }
 }

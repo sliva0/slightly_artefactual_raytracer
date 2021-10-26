@@ -31,7 +31,7 @@ fn main() {
                         ambient: 0.05,
                         smoothness: 200,
                         flare_intensity: 0.7,
-                        specularity: 0.12,
+                        specularity: 0.3,
                     },
                 }),
                 Arc::new(Cuboid::new(
@@ -42,7 +42,7 @@ fn main() {
                         ambient: 0.05,
                         smoothness: 100,
                         flare_intensity: 0.7,
-                        specularity: 0.12,
+                        specularity: 0.3,
                     },
                 )),
             ],
@@ -63,7 +63,7 @@ fn main() {
                     brightness: 700.0,
                 }),
             ],
-            3,
+            2,
             
         ),
         cam: Camera::from_angles(
@@ -76,9 +76,9 @@ fn main() {
             15.0,
         ),
         fov: 60.0,
-        resolution: (3840, 2160),
+        resolution: (800, 450), //(3840, 2160),
         subsampling_limit: 0.05,
-        supersampling_multiplier: 2,
+        supersampling_multiplier: 1,
     };
 
     let path = "image.png";
