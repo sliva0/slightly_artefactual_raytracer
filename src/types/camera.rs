@@ -19,13 +19,14 @@ impl Camera {
         (angle.cos() * length, angle.sin() * length)
     }
 
-    //this function doesn't work correctly
+    /// This function is not working as it should and I don't know why.
+    /// TODO: fix
     pub fn _from_dir(pos: Point, dir: Vector) -> Self {
         let view_vec = dir.normalize();
         let side_vec = (view_vec ^ _UP).normalize();
         let up_vec = side_vec ^ view_vec;
         Camera {
-            pos: pos,
+            pos,
             operator: Matrix::new(side_vec, up_vec, -view_vec),
         }
     }

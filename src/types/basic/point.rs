@@ -62,8 +62,22 @@ impl Vector {
             z: self.x * rhs.y - self.y * rhs.x,
         }
     }
-    pub fn reflect(self, rhs: Self) -> Self {
-        self - rhs * (self * rhs * 2.0)
+    pub fn reflect(self, normal: Self) -> Self {
+        self - normal * (self * normal * 2.0)
+    }
+    pub fn compute_reflectance_and_refract(self, normal: Self, n1: f64, n2: f64) -> (f64, Option<Self>) {
+        let n = n1 / n2;
+        let cos_i = -self * normal;
+        let sin_t2 = n * n * (1.0 - cos_i * cos_i);
+        if sin_t2 >= 1.0 {
+            return (1.0, None); //total internal reflection
+        }
+        let cos_t = (1.0 - sin_t2).sqrt();
+        let r1 = (n1 * cos_i - n2 * cos_t) / (n1 * cos_i + n2 * cos_t); //Fresnel equations
+        let r2 = (n2 * cos_i - n1 * cos_t) / (n2 * cos_i + n1 * cos_t);
+
+        let refracted = self * n + normal * (n * cos_i - cos_t); //refracted ray
+        ((r1 * r1 + r2 * r2) / 2.0, Some(refracted))
     }
 }
 

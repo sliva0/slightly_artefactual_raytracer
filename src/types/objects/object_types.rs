@@ -16,7 +16,6 @@ impl<T: Object> Upcast for T {
     }
 }
 
-#[allow(unused_variables)]
 pub trait Object: Upcast + Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn get_normal(&self, pos: Point) -> Vector;
@@ -29,15 +28,16 @@ pub trait Object: Upcast + Sync + Send {
 pub trait MarchingObject: Object {
     fn check_sdf(&self, pos: Point) -> f64;
 
-    fn sdf_derivative(&self, pos: Point, delta: Vector) -> f64 {
+    //SDF derivative
+    fn sdf_drv(&self, pos: Point, delta: Vector) -> f64 {
         self.check_sdf(pos + delta) - self.check_sdf(pos - delta)
     }
 
     fn get_normal(&self, pos: Point) -> Vector {
         Vector {
-            x: self.sdf_derivative(pos, Vector { x: EPSILON, ..ORIGIN }),
-            y: self.sdf_derivative(pos, Vector { y: EPSILON, ..ORIGIN }),
-            z: self.sdf_derivative(pos, Vector { z: EPSILON, ..ORIGIN }),
+            x: self.sdf_drv(pos, Vector { x: EPSILON, ..ORIGIN }),
+            y: self.sdf_drv(pos, Vector { y: EPSILON, ..ORIGIN }),
+            z: self.sdf_drv(pos, Vector { z: EPSILON, ..ORIGIN }),
         }
     }
 }
