@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use super::polygons::pair_with;
+use super::polygons::get_basis_pairs;
 use super::*;
 
 pub struct Cuboid {
@@ -56,30 +56,21 @@ impl MetaTracingObject for Cuboid {
     fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
         let mut objects = Vec::with_capacity(12);
 
-        let pairs = pair_with(
-            [
-                Vector { x: 1.0, ..ORIGIN },
-                Vector { y: 1.0, ..ORIGIN },
-                Vector { z: 1.0, ..ORIGIN },
-            ],
-            |p1, p2| (p1, p2),
-        );
-        for (i, j) in pairs {
-            for (dir, side) in [(i, j), (-i, -j)] {
-                let dir = dir.pmul(self.size);
-                let sides = (
-                    side.pmul(self.size),
-                    (dir ^ side).normalize().pmul(self.size),
-                );
+        for (dir, side) in get_basis_pairs() {
+            let dir = dir.pmul(self.size);
+            let sides = (
+                side.pmul(self.size),
+                (dir ^ side).normalize().pmul(self.size),
+            );
 
-                objects.extend(ObjectPolygon::collect_cuboid_face(
-                    Arc::downgrade(&self),
-                    self.pos,
-                    dir,
-                    sides,
-                ));
-            }
+            objects.extend(ObjectPolygon::collect_cuboid_face(
+                Arc::downgrade(&self),
+                self.pos,
+                dir,
+                sides,
+            ));
         }
+
         objects
     }
 }

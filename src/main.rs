@@ -29,9 +29,10 @@ fn main() {
                     colors: (Color::new(80, 80, 80), Color::new(200, 200, 200)),
                     material: Material {
                         ambient: 0.05,
-                        smoothness: 200,
-                        flare_intensity: 0.7,
-                        specularity: 0.3,
+                        diffuse: 1.0,
+                        specular: 0.7,
+                        shininess: 200,
+                        m_type: ReflectiveType { reflectance: 0.3 },
                     },
                 }),
                 Arc::new(Cuboid::new(
@@ -40,9 +41,10 @@ fn main() {
                     Color::new(80, 80, 80),
                     Material {
                         ambient: 0.05,
-                        smoothness: 100,
-                        flare_intensity: 0.7,
-                        specularity: 0.3,
+                        diffuse: 1.0,
+                        specular: 0.7,
+                        shininess: 100,
+                        m_type: ReflectiveType { reflectance: 0.3 },
                     },
                 )),
             ],
@@ -63,8 +65,7 @@ fn main() {
                     brightness: 700.0,
                 }),
             ],
-            2,
-            
+            1,
         ),
         cam: Camera::from_angles(
             Point {
@@ -82,6 +83,6 @@ fn main() {
     };
 
     let path = "image.png";
-    renderer.render_and_save(path, subsampling_func(4));
+    renderer.render_and_save(path, subsampling_func(5));
     open_image(path);
 }

@@ -14,6 +14,12 @@ pub const ORIGIN: Point = Point {
     z: 0.0,
 };
 
+pub const BASIS: [Vector; 3] = [
+    Vector { x: 1.0, ..ORIGIN },
+    Vector { y: 1.0, ..ORIGIN },
+    Vector { z: 1.0, ..ORIGIN },
+];
+
 impl Point {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
@@ -65,7 +71,12 @@ impl Vector {
     pub fn reflect(self, normal: Self) -> Self {
         self - normal * (self * normal * 2.0)
     }
-    pub fn compute_reflectance_and_refract(self, normal: Self, n1: f64, n2: f64) -> (f64, Option<Self>) {
+    pub fn compute_reflectance_and_refract(
+        self,
+        normal: Self,
+        n1: f64,
+        n2: f64,
+    ) -> (f64, Option<Self>) {
         let n = n1 / n2;
         let cos_i = -self * normal;
         let sin_t2 = n * n * (1.0 - cos_i * cos_i);

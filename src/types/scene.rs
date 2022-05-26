@@ -157,14 +157,11 @@ impl<'a> Scene<'a> {
                 let src_color = source.get_color(pos);
                 let brightness = source.get_brightness(pos);
 
-                let diffuse_part = brightness * angle_cos;
-                let diffuse_color = obj_color * src_color * (diffuse_part);
+                let diffuse_color = obj_color * src_color * (mtrl.diffuse * brightness * angle_cos);
 
                 let half_angle_dir = (light_dir + dir).normalize();
-                let dot_prod = normal * half_angle_dir;
-                let coef = mtrl.flare_intensity * brightness;
-                let specular_part = dot_prod.powi(mtrl.smoothness) * coef;
-                let specular_color = src_color * specular_part;
+                let specular_mp = (normal * half_angle_dir).powi(mtrl.shininess); // multiplier
+                let specular_color = src_color * (specular_mp * mtrl.specular * brightness);
 
                 final_color += diffuse_color + specular_color;
             }
@@ -174,16 +171,19 @@ impl<'a> Scene<'a> {
 
     fn compute_subray(&self, start: Point, dir: Vector, refl_limit: i32) -> Color {
         let (object, pos) = self.compute_ray_trajectory(start, dir);
-        let specularity = object.get_material(pos).specularity;
         let color = self.compute_lightning(object.clone(), pos, dir);
+        
+        if refl_limit == 0 {
+            return color;
+        }
+        match object.get_material(pos).m_type {
+            DefaultType => color,
+            ReflectiveType { reflectance } => {
+                let dir = dir.reflect(object.get_normal(pos));
+                let reflected_color = self.compute_subray(pos, dir, refl_limit - 1);
+                color * (1.0 - reflectance) + reflected_color * reflectance
+            }
 
-        if refl_limit == 0 || specularity == 0.0 {
-            color
-        } else {
-            let start = pos;
-            let dir = dir.reflect(object.get_normal(pos));
-            let refl_limit = refl_limit - 1;
-            color * (1.0 - specularity) + self.compute_subray(start, dir, refl_limit) * specularity
         }
     }
 

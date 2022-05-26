@@ -1,9 +1,30 @@
-use std::sync::{Arc, Weak};
+use std::{
+    fmt::Debug,
+    sync::{Arc, Weak},
+};
 
 use super::*;
 
-pub fn pair_with<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
-    [f(p[0], p[1]), f(p[1], p[2]), f(p[2], p[0])]
+fn get_vec_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: Vec<T>, f: F) -> Vec<O> {
+    p.iter()
+        .enumerate()
+        .map(|(i, &v)| f(v, p[(i + 1) % p.len()]))
+        .collect()
+}
+
+pub fn get_pairs<T, const N: usize, O, F>(p: [T; N], f: F) -> [O; N]
+where
+    T: Copy,
+    O: Debug,
+    F: Fn(T, T) -> O,
+{
+    get_vec_pairs(p.to_vec(), f).try_into().unwrap()
+}
+
+pub fn get_basis_pairs() -> Vec<(Vector, Vector)> {
+    let mut v = get_vec_pairs(BASIS.to_vec(), |x, y| (x, y));
+    v.extend(get_vec_pairs(BASIS.to_vec(), |x, y| (-x, -y)));
+    v
 }
 
 pub struct Plane {
@@ -44,7 +65,7 @@ impl Polygon {
     fn new(v: [Point; 3]) -> Self {
         Self {
             v,
-            e: pair_with(v, |v1, v2| v1 >> v2),
+            e: get_pairs(v, |v1, v2| v1 >> v2),
             plane: Plane::new(v),
         }
     }
@@ -53,7 +74,7 @@ impl Polygon {
         let dist = self.plane.find_intersection(start, dir)?;
         let pos = start + dir * dist;
 
-        let m = pair_with(
+        let m = get_pairs(
             [
                 self.e[0] ^ (self.v[0] >> pos),
                 self.e[1] ^ (self.v[1] >> pos),
@@ -61,6 +82,7 @@ impl Polygon {
             ],
             |v1, v2| v1 * v2,
         );
+        m.iter().all(|&x| x >= 0.0);
         if m[0].min(m[1]).min(m[2]) >= 0.0 {
             Some(dist)
         } else {

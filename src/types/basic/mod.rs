@@ -1,5 +1,5 @@
 mod point;
-pub use point::{Point, Vector, ORIGIN};
+pub use point::{Point, Vector, ORIGIN, BASIS};
 
 mod color;
 pub use color::{Color, RawColor};
@@ -9,3 +9,4 @@ pub use matrix::Matrix;
 
 mod material;
 pub use material::Material;
+pub use material::MaterialType::*;
