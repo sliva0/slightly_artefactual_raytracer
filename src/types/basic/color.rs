@@ -63,7 +63,7 @@ impl Color {
         sub.iter().sum::<f64>() / (255.0 * 3.0)
     }
 
-    pub fn colors_diff(colors: Vec<Self>) -> f64 {
+    pub fn colors_diff(colors: &Vec<Self>) -> f64 {
         let mut max_diff = 0f64;
         for i in colors.iter() {
             for j in colors.iter() {

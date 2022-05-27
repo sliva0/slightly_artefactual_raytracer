@@ -138,7 +138,7 @@ impl<'a> Scene<'a> {
         self.march_shadow_ray(start, dir, max_depth) || self.trace_shadow_ray(start, dir, max_depth)
     }
 
-    fn compute_lightning(&self, object: ObjectType, pos: Point, dir: Vector) -> Color {
+    fn compute_lightning(&self, object: &ObjectType, pos: Point, dir: Vector) -> Color {
         let obj_color = object.get_color(pos);
         if object.is_shematic() {
             return obj_color;
@@ -171,7 +171,7 @@ impl<'a> Scene<'a> {
 
     fn compute_subray(&self, start: Point, dir: Vector, refl_limit: i32) -> Color {
         let (object, pos) = self.compute_ray_trajectory(start, dir);
-        let color = self.compute_lightning(object.clone(), pos, dir);
+        let color = self.compute_lightning(&object, pos, dir);
         
         if refl_limit == 0 {
             return color;

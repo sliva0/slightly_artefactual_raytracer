@@ -108,7 +108,7 @@ impl<'a> SubsamplingRenderer<'a> {
     fn interpolate_pixel(&self, x: usize, y: usize, image: &mut Image) -> Pixel {
         let colors = Self::collect_neighbors(x, y, image);
 
-        if Color::colors_diff(colors.clone()) > self.subsampling_limit {
+        if Color::colors_diff(&colors) > self.subsampling_limit {
             PixelToRender
         } else {
             InterpolatedPixel(Color::colors_avg(colors))
