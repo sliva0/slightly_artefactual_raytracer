@@ -40,16 +40,16 @@ impl Plane {
     }
 
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
-        #[allow(illegal_floating_point_literal_pattern)]
-        let dist = match dir * self.n {
-            0.0 => return None,
-            d => -(start * self.n + self.d) / d,
-        };
+        let m = dir * self.n;
+        if m.is_subnormal() {
+            return None
+        }
+        let dist =  -(start * self.n + self.d) / m;
 
-        if dist <= 0.0 {
-            None
-        } else {
+        if dist > 0.0 {
             Some(dist)
+        } else {
+            None
         }
     }
 }

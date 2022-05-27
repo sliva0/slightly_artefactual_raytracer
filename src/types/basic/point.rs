@@ -51,11 +51,13 @@ impl Vector {
     pub fn abs(self) -> f64 {
         (self * self).sqrt()
     }
-    #[allow(illegal_floating_point_literal_pattern)]
+
     pub fn normalize(self) -> Self {
-        match self.abs() {
-            0.0 => ORIGIN,
-            abs => self / abs,
+        let abs = self.abs();
+        if abs.is_normal() {
+            self / abs
+        } else {
+            ORIGIN
         }
     }
     pub fn dot(self, rhs: Self) -> f64 {

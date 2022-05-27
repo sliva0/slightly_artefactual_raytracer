@@ -50,14 +50,13 @@ impl TracingObject for Sphere {
         let r = self.radius;
         let l = start >> self.pos;
         let s = l * dir;
-        #[allow(illegal_floating_point_literal_pattern)]
-        match (r * r + s * s - l * l).sqrt() {
-            f64::NAN => None,
-            delta => Some(if s - delta > 0.0 {
-                s - delta
-            } else {
-                s + delta
-            }),
+        let delta = (r * r + s * s - l * l).sqrt();
+        if delta.is_nan() {
+            None
+        } else if s - delta > 0.0 {
+            Some(s - delta)
+        } else {
+            Some(s + delta)
         }
     }
 }
