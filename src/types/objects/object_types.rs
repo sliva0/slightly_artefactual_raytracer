@@ -1,17 +1,10 @@
-use std::sync::Arc;
-
 use super::*;
 
 pub trait Upcast: Sync + Send {
-    fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
-    where
-        Self: 'a;
+    fn upcast(&self) -> &dyn Object;
 }
 impl<T: Object> Upcast for T {
-    fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
-    where
-        Self: 'a,
-    {
+    fn upcast(&self) -> &dyn Object {
         self
     }
 }
@@ -35,9 +28,27 @@ pub trait MarchingObject: Object {
 
     fn get_normal(&self, pos: Point) -> Vector {
         Vector {
-            x: self.sdf_drv(pos, Vector { x: EPSILON, ..ORIGIN }),
-            y: self.sdf_drv(pos, Vector { y: EPSILON, ..ORIGIN }),
-            z: self.sdf_drv(pos, Vector { z: EPSILON, ..ORIGIN }),
+            x: self.sdf_drv(
+                pos,
+                Vector {
+                    x: EPSILON,
+                    ..ORIGIN
+                },
+            ),
+            y: self.sdf_drv(
+                pos,
+                Vector {
+                    y: EPSILON,
+                    ..ORIGIN
+                },
+            ),
+            z: self.sdf_drv(
+                pos,
+                Vector {
+                    z: EPSILON,
+                    ..ORIGIN
+                },
+            ),
         }
     }
 }
@@ -49,7 +60,7 @@ pub trait TracingObject: Object {
 pub trait MetaTracingObject: Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn get_material(&self, pos: Point) -> Material;
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
+    fn build_objects(&self) -> Vec<TracingObjectType>;
 }
 
 pub trait LightSource: Sync + Send {
@@ -59,7 +70,7 @@ pub trait LightSource: Sync + Send {
     fn get_dist(&self, pos: Point) -> f64;
     fn get_color(&self, pos: Point) -> Color;
 
-    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
+    fn build_schematic_objects(&self) -> Vec<TracingObjectType>;
 
     fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
         let dir = self._get_light_dir(pos);
@@ -76,8 +87,8 @@ pub trait LightSource: Sync + Send {
     }
 }
 
-pub type ObjectType<'a> = Arc<dyn Object + 'a>;
-pub type MarchingObjectType<'a> = Arc<dyn MarchingObject + 'a>;
-pub type TracingObjectType<'a> = Arc<dyn TracingObject + 'a>;
-pub type MetaTracingObjectType<'a> = Arc<dyn MetaTracingObject + 'a>;
-pub type LightSourceType<'a> = Arc<dyn LightSource + 'a>;
+pub type ObjectType<'a> = &'a dyn Object;
+pub type MarchingObjectType<'a> = Box<dyn MarchingObject + 'a>;
+pub type TracingObjectType<'a> = Box<dyn TracingObject + 'a>;
+pub type MetaTracingObjectType<'a> = Box<dyn MetaTracingObject + 'a>;
+pub type LightSourceType<'a> = Box<dyn LightSource + 'a>;

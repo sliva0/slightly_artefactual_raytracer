@@ -1,7 +1,3 @@
-#![allow(dead_code)]
-
-use std::sync::Arc;
-
 use super::polygons::get_basis_pairs;
 use super::*;
 
@@ -53,7 +49,7 @@ impl MetaTracingObject for Cuboid {
         self.material
     }
 
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+    fn build_objects(&self) -> Vec<TracingObjectType> {
         let mut objects = Vec::with_capacity(12);
 
         for (dir, side) in get_basis_pairs() {
@@ -64,7 +60,7 @@ impl MetaTracingObject for Cuboid {
             );
 
             objects.extend(ObjectPolygon::collect_cuboid_face(
-                Arc::downgrade(&self),
+                self,
                 self.pos,
                 dir,
                 sides,

@@ -1,7 +1,4 @@
-use std::{
-    fmt::Debug,
-    sync::{Arc, Weak},
-};
+use std::fmt::Debug;
 
 use super::*;
 
@@ -42,9 +39,9 @@ impl Plane {
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         let m = dir * self.n;
         if m.is_subnormal() {
-            return None
+            return None;
         }
-        let dist =  -(start * self.n + self.d) / m;
+        let dist = -(start * self.n + self.d) / m;
 
         if dist > 0.0 {
             Some(dist)
@@ -94,21 +91,21 @@ impl Polygon {
     }
 }
 
-pub struct ObjectPolygon<T: MetaTracingObject> {
+pub struct ObjectPolygon<'a, T: MetaTracingObject> {
     p: Polygon,
-    obj: Weak<T>,
+    obj: &'a T,
 }
-impl<T: MetaTracingObject> ObjectPolygon<T> {
-    fn new(v: [Point; 3], obj: &Weak<T>) -> Arc<Self> {
-        Arc::new(Self {
+impl<'a, T: MetaTracingObject> ObjectPolygon<'a, T> {
+    fn new(v: [Point; 3], obj: &'a T) -> Box<Self> {
+        Box::new(Self {
             p: Polygon::new(v),
-            obj: obj.clone(),
+            obj,
         })
     }
 }
-impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
+impl<'a, T: MetaTracingObject + 'a> ObjectPolygon<'a, T> {
     pub fn collect_cuboid_face(
-        obj: Weak<T>,
+        obj: &'a T,
         shift: Vector,
         dir: Vector,
         sides: (Vector, Vector),
@@ -124,17 +121,14 @@ impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
             center + sides.0 - sides.1,
         );
         vec![
-            Self::new([c.0, c.1, c.2], &obj),
-            Self::new([c.2, c.3, c.0], &obj),
+            Self::new([c.0, c.1, c.2], obj),
+            Self::new([c.2, c.3, c.0], obj),
         ]
     }
 }
-impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
+impl<T: MetaTracingObject> Object for ObjectPolygon<'_, T> {
     fn get_color(&self, pos: Point) -> Color {
-        match self.obj.upgrade() {
-            Some(metaobj) => metaobj.get_color(pos),
-            None => Color::ERR_COLOR,
-        }
+        self.obj.get_color(pos)
     }
 
     fn get_normal(&self, _pos: Point) -> Vector {
@@ -142,17 +136,14 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
     }
 
     fn get_material(&self, pos: Point) -> Material {
-        match self.obj.upgrade() {
-            Some(metaobj) => metaobj.get_material(pos),
-            None => Material::ERR_MATERIAL,
-        }
+        self.obj.get_material(pos)
     }
 
     fn is_shematic(&self) -> bool {
-        self.obj.strong_count() == 0
+        false
     }
 }
-impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
+impl<T: MetaTracingObject> TracingObject for ObjectPolygon<'_, T> {
     fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
         self.p.find_intersection(start, dir)
     }

@@ -1,4 +1,4 @@
-use std::{process::Command, sync::Arc};
+use std::process::Command;
 
 mod types;
 use types::*;
@@ -23,7 +23,7 @@ fn main() {
             vec![],
             vec![],
             vec![
-                Arc::new(Room {
+                Box::new(Room {
                     size: 100.0,
                     square_size: 20.0,
                     colors: (Color::new(80, 80, 80), Color::new(200, 200, 200)),
@@ -35,7 +35,7 @@ fn main() {
                         m_type: ReflectiveType { reflectance: 0.3 },
                     },
                 }),
-                Arc::new(Cuboid::new(
+                Box::new(Cuboid::new(
                     Point::new(-10.0, -50.0, -80.0),
                     Point::new(10.0, 10.0, 20.0),
                     Color::new(80, 80, 80),
@@ -49,17 +49,17 @@ fn main() {
                 )),
             ],
             vec![
-                Arc::new(Lamp {
+                Box::new(Lamp {
                     pos: Point::new(10.0, -30.0, -52.0),
                     color: Color::new(255, 127, 0),
                     brightness: 3000.0,
                 }),
-                Arc::new(Lamp {
+                Box::new(Lamp {
                     pos: Point::new(-30.0, -30.0, -52.0),
                     color: Color::new(0, 0, 255),
                     brightness: 3000.0,
                 }),
-                Arc::new(Lamp {
+                Box::new(Lamp {
                     pos: Point::new(-10.0, -80.0, -75.0),
                     color: Color::new(180, 120, 255),
                     brightness: 700.0,

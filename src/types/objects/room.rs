@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::polygons::get_basis_pairs;
 use super::*;
 
@@ -48,14 +46,14 @@ impl MetaTracingObject for Room {
         self.material
     }
 
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+    fn build_objects(&self) -> Vec<TracingObjectType> {
         let mut objects = Vec::with_capacity(12);
 
         let size = -self.size;
         for (dir, side) in get_basis_pairs() {
             let dir = dir * size;
             objects.extend(ObjectPolygon::collect_cuboid_face(
-                Arc::downgrade(&self),
+                self,
                 ORIGIN,
                 dir,
                 (side * size, (dir ^ side)),

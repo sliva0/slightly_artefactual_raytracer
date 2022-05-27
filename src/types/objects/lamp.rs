@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::*;
 
 pub struct Lamp {
@@ -25,8 +23,8 @@ impl LightSource for Lamp {
         self.color
     }
 
-    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
-        vec![Arc::new(Sphere {
+    fn build_schematic_objects(&self) -> Vec<TracingObjectType> {
+        vec![Box::new(Sphere {
             pos: self.pos,
             radius: LAMP_RADIUS,
             color: self.color,
