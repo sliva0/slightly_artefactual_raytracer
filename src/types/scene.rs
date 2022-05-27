@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use super::*;
 
-enum SdfCheckRes<'a> {
+enum SdfCheck<'a> {
     Miss(f64),
     Hit(ObjectType<'a>),
 }
@@ -16,10 +16,10 @@ pub struct Scene<'a> {
 }
 impl<'a> Scene<'a> {
     fn build_meta_objects(&mut self) {
-        for object in self.meta_objs.iter().map(Arc::clone) {
+        for object in self.meta_objs.to_vec() {
             self.tracing_objs.extend(object.build_objects());
         }
-        for lamp in self.lamps.iter().map(Arc::clone) {
+        for lamp in self.lamps.to_vec() {
             self.tracing_objs.extend(lamp.build_schematic_objects());
         }
     }
@@ -42,7 +42,7 @@ impl<'a> Scene<'a> {
         new_self
     }
 
-    fn check_sdf(&self, pos: Point, check_schematic: bool) -> SdfCheckRes {
+    fn check_sdf(&self, pos: Point, check_schematic: bool) -> SdfCheck {
         let mut sdf = f64::INFINITY;
 
         for object in self.marching_objs.iter() {
@@ -51,10 +51,10 @@ impl<'a> Scene<'a> {
             }
             sdf = sdf.min(object.check_sdf(pos));
             if sdf < EPSILON {
-                return SdfCheckRes::Hit(object.clone().upcast());
+                return SdfCheck::Hit(object.clone().upcast());
             }
         }
-        SdfCheckRes::Miss(sdf)
+        SdfCheck::Miss(sdf)
     }
 
     fn march_ray(&self, start: Point, dir: Vector, max_depth: f64) -> Option<(ObjectType, f64)> {
@@ -63,8 +63,8 @@ impl<'a> Scene<'a> {
         loop {
             let pos = start + (dir * depth);
             match self.check_sdf(pos, true) {
-                SdfCheckRes::Hit(obj) => return Some((obj, depth)),
-                SdfCheckRes::Miss(sdf) => depth += sdf,
+                SdfCheck::Hit(obj) => return Some((obj, depth)),
+                SdfCheck::Miss(sdf) => depth += sdf,
             }
             if depth > max_depth || depth == f64::INFINITY {
                 return None;
@@ -110,8 +110,8 @@ impl<'a> Scene<'a> {
         loop {
             let pos = start + (dir * depth);
             match self.check_sdf(pos, false) {
-                SdfCheckRes::Hit(_) => return true,
-                SdfCheckRes::Miss(sdf) => depth += sdf,
+                SdfCheck::Hit(_) => return true,
+                SdfCheck::Miss(sdf) => depth += sdf,
             }
             if depth > max_depth || depth == f64::INFINITY {
                 return false;
