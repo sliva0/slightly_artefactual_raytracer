@@ -25,7 +25,7 @@ impl LightSource for Lamp {
         self.color
     }
 
-    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+    fn build_schematic_objects(self: Arc<Self>) -> Vec<TracingObjectType> {
         vec![Arc::new(Sphere {
             pos: self.pos,
             radius: LAMP_RADIUS,

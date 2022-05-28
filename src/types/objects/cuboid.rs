@@ -53,7 +53,7 @@ impl MetaTracingObject for Cuboid {
         self.material
     }
 
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+    fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType> {
         let mut objects = Vec::with_capacity(12);
 
         for (dir, side) in get_basis_pairs() {

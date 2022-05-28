@@ -6,14 +6,14 @@ use image::ImageBuffer;
 
 use super::*;
 
-pub struct Renderer<'a> {
-    pub scene: Scene<'a>,
+pub struct Renderer {
+    pub scene: Scene,
     pub cam: Camera,
     pub fov: f64,
     pub resolution: (usize, usize),
 }
 
-impl<'a> Renderer<'a> {
+impl Renderer {
     fn f64_resolution(&self) -> (f64, f64) {
         (self.resolution.0 as f64, self.resolution.1 as f64)
     }

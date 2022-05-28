@@ -1,6 +1,6 @@
 use super::*;
 
-pub struct DummyObject();
+pub struct DummyObject;
 
 impl Object for DummyObject {
     fn get_color(&self, _pos: Point) -> Color {

@@ -49,7 +49,7 @@ pub trait TracingObject: Object {
 pub trait MetaTracingObject: Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn get_material(&self, pos: Point) -> Material;
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
+    fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 }
 
 pub trait LightSource: Sync + Send {
@@ -59,7 +59,7 @@ pub trait LightSource: Sync + Send {
     fn get_dist(&self, pos: Point) -> f64;
     fn get_color(&self, pos: Point) -> Color;
 
-    fn build_schematic_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>>;
+    fn build_schematic_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 
     fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
         let dir = self._get_light_dir(pos);
@@ -76,8 +76,8 @@ pub trait LightSource: Sync + Send {
     }
 }
 
-pub type ObjectType<'a> = Arc<dyn Object + 'a>;
-pub type MarchingObjectType<'a> = Arc<dyn MarchingObject + 'a>;
-pub type TracingObjectType<'a> = Arc<dyn TracingObject + 'a>;
-pub type MetaTracingObjectType<'a> = Arc<dyn MetaTracingObject + 'a>;
-pub type LightSourceType<'a> = Arc<dyn LightSource + 'a>;
+pub type ObjectType = Arc<dyn Object>;
+pub type MarchingObjectType = Arc<dyn MarchingObject>;
+pub type TracingObjectType = Arc<dyn TracingObject>;
+pub type MetaTracingObjectType = Arc<dyn MetaTracingObject>;
+pub type LightSourceType = Arc<dyn LightSource>;

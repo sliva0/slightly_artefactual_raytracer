@@ -48,7 +48,7 @@ impl MetaTracingObject for Room {
         self.material
     }
 
-    fn build_objects<'a>(self: Arc<Self>) -> Vec<TracingObjectType<'a>> {
+    fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType> {
         let mut objects = Vec::with_capacity(12);
 
         let size = -self.size;

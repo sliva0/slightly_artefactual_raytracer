@@ -38,8 +38,8 @@ impl Pixel {
 
 use Pixel::*;
 
-pub struct SubsamplingRenderer<'a> {
-    pub scene: Scene<'a>,
+pub struct SubsamplingRenderer {
+    pub scene: Scene,
     pub cam: Camera,
     pub fov: f64,
     pub resolution: (usize, usize),
@@ -47,7 +47,7 @@ pub struct SubsamplingRenderer<'a> {
     pub supersampling_multiplier: usize,
 }
 
-impl<'a> SubsamplingRenderer<'a> {
+impl SubsamplingRenderer {
     fn get_resolution(&self) -> (usize, usize) {
         (
             (self.resolution.0 * self.supersampling_multiplier),

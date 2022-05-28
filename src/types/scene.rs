@@ -2,19 +2,19 @@ use std::sync::Arc;
 
 use super::*;
 
-enum SdfCheck<'a> {
+enum SdfCheck {
     Miss(f64),
-    Hit(ObjectType<'a>),
+    Hit(ObjectType),
 }
 
-pub struct Scene<'a> {
-    marching_objs: Vec<MarchingObjectType<'a>>,
-    tracing_objs: Vec<TracingObjectType<'a>>,
-    meta_objs: Vec<MetaTracingObjectType<'a>>,
-    lamps: Vec<LightSourceType<'a>>,
+pub struct Scene {
+    marching_objs: Vec<MarchingObjectType>,
+    tracing_objs: Vec<TracingObjectType>,
+    meta_objs: Vec<MetaTracingObjectType>,
+    lamps: Vec<LightSourceType>,
     reflection_limit: i32,
 }
-impl<'a> Scene<'a> {
+impl Scene {
     fn build_meta_objects(&mut self) {
         for object in self.meta_objs.to_vec() {
             self.tracing_objs.extend(object.build_objects());
@@ -25,21 +25,21 @@ impl<'a> Scene<'a> {
     }
 
     pub fn new(
-        marching_objs: Vec<MarchingObjectType<'a>>,
-        tracing_objs: Vec<TracingObjectType<'a>>,
-        meta_objs: Vec<MetaTracingObjectType<'a>>,
-        lamps: Vec<LightSourceType<'a>>,
+        marching_objs: Vec<MarchingObjectType>,
+        tracing_objs: Vec<TracingObjectType>,
+        meta_objs: Vec<MetaTracingObjectType>,
+        lamps: Vec<LightSourceType>,
         reflection_limit: i32,
     ) -> Self {
-        let mut new_self = Self {
+        let mut scene = Self {
             marching_objs,
             tracing_objs,
             meta_objs,
             lamps,
             reflection_limit,
         };
-        new_self.build_meta_objects();
-        new_self
+        scene.build_meta_objects();
+        scene
     }
 
     fn check_sdf(&self, pos: Point, check_schematic: bool) -> SdfCheck {
@@ -88,7 +88,7 @@ impl<'a> Scene<'a> {
     }
 
     fn compute_ray_trajectory(&self, start: Point, dir: Vector) -> (ObjectType, Point) {
-        let mut object: ObjectType = Arc::new(DummyObject());
+        let mut object: ObjectType = Arc::new(DummyObject);
         let mut distance = f64::INFINITY;
 
         if let Some((obj, dist)) = self.trace_ray(start, dir) {

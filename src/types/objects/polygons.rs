@@ -106,13 +106,13 @@ impl<T: MetaTracingObject> ObjectPolygon<T> {
         })
     }
 }
-impl<'a, T: MetaTracingObject + 'a + Sync + Send> ObjectPolygon<T> {
+impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
     pub fn collect_cuboid_face(
         obj: Weak<T>,
         shift: Vector,
         dir: Vector,
         sides: (Vector, Vector),
-    ) -> Vec<TracingObjectType<'a>> {
+    ) -> Vec<TracingObjectType> {
         let center = shift + dir;
         // I do not remember why these lines are needed, if I remember, I will return it
         // let eps1: f64 = 1.0 + EPSILON;
