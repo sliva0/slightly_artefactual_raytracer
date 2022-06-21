@@ -24,26 +24,26 @@ impl Default for Hit {
 }
 
 impl Hit {
-    fn new_tracing(obj: &TracingObjectType, depth: f64, ray: Ray) -> Self {
-        Self {
+    fn new_tracing(obj: &TracingObjectType, depth: f64, ray: Ray) -> Option<Self> {
+        Some(Self {
             object: obj.clone().upcast(),
             depth,
             point: ray.get_point(depth - EPSILON),
             crossed_point: ray.get_point(depth),
-        }
+        })
     }
 
-    fn new_marching(obj: &MarchingObjectType, error: f64, depth: f64, ray: Ray) -> Self {
+    fn new_marching(obj: &MarchingObjectType, error: f64, depth: f64, ray: Ray) -> Option<Self> {
         let object = obj.clone().upcast();
         let point = ray.get_point(depth);
         let normal = object.get_normal(point);
         let crossed_point = point + normal * (error + EPSILON).copysign(normal * ray.dir);
-        Self {
+        Some(Self {
             object,
             depth,
             point,
             crossed_point,
-        }
+        })
     }
 
     fn color(&self) -> Color {
@@ -114,7 +114,7 @@ impl Scene {
         loop {
             let pos = ray.get_point(depth);
             match self.get_sdf::<S>(pos) {
-                SdfResult::Hit(sdf, obj) => return Some(Hit::new_marching(&obj, sdf, depth, ray)),
+                SdfResult::Hit(sdf, obj) => return Hit::new_marching(&obj, sdf, depth, ray),
                 SdfResult::Miss(sdf) => depth += sdf,
             }
             if depth > max_depth || depth.is_infinite() {
@@ -130,12 +130,16 @@ impl Scene {
         for obj in self.tracing_objs.iter() {
             if let Some(dist) = obj.find_intersection(ray) {
                 if dist < distance && dist > EPSILON {
-                    hit = Some(Hit::new_tracing(&obj, dist, ray));
+                    hit = Hit::new_tracing(&obj, dist, ray);
                     distance = dist;
                 }
             }
         }
         hit
+    }
+
+    fn march_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
+        self.march_ray::<false>(ray, max_depth).is_some()
     }
 
     fn trace_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
@@ -159,7 +163,7 @@ impl Scene {
     }
 
     pub fn compute_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
-        self.march_ray::<false>(ray, max_depth).is_some() || self.trace_shadow_ray(ray, max_depth)
+        self.march_shadow_ray(ray, max_depth) || self.trace_shadow_ray(ray, max_depth)
     }
 
     fn compute_lightning(&self, hit: &Hit, dir: Vector) -> Color {

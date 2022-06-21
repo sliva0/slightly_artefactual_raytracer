@@ -55,7 +55,7 @@ impl MetaTracingObject for Room {
         for (dir, side) in get_basis_pairs() {
             let dir = dir * size;
             objects.extend(ObjectPolygon::collect_cuboid_face(
-                Arc::downgrade(&self),
+                &self,
                 ORIGIN,
                 dir,
                 (side * size, (dir ^ side)),

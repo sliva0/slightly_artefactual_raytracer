@@ -1,6 +1,6 @@
 use std::{
     fmt::Debug,
-    sync::{Arc, Weak},
+    sync::Arc,
 };
 
 use super::*;
@@ -96,10 +96,10 @@ impl Polygon {
 
 pub struct ObjectPolygon<T: MetaTracingObject> {
     p: Polygon,
-    obj: Weak<T>,
+    obj: Arc<T>,
 }
 impl<T: MetaTracingObject> ObjectPolygon<T> {
-    fn new(v: [Point; 3], obj: &Weak<T>) -> Arc<Self> {
+    fn new(v: [Point; 3], obj: &Arc<T>) -> Arc<Self> {
         Arc::new(Self {
             p: Polygon::new(v),
             obj: obj.clone(),
@@ -108,7 +108,7 @@ impl<T: MetaTracingObject> ObjectPolygon<T> {
 }
 impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
     pub fn collect_cuboid_face(
-        obj: Weak<T>,
+        obj: &Arc<T>,
         shift: Vector,
         dir: Vector,
         sides: (Vector, Vector),
@@ -124,17 +124,15 @@ impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
             center + sides.0 - sides.1,
         );
         vec![
-            Self::new([c.0, c.1, c.2], &obj),
-            Self::new([c.2, c.3, c.0], &obj),
+            Self::new([c.0, c.1, c.2], obj),
+            Self::new([c.2, c.3, c.0], obj),
         ]
     }
 }
+
 impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
     fn get_color(&self, pos: Point) -> Color {
-        match self.obj.upgrade() {
-            Some(metaobj) => metaobj.get_color(pos),
-            None => Color::ERR_COLOR,
-        }
+        self.obj.get_color(pos)
     }
 
     fn get_normal(&self, _pos: Point) -> Vector {
@@ -142,16 +140,10 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
     }
 
     fn get_material(&self, pos: Point) -> Material {
-        match self.obj.upgrade() {
-            Some(metaobj) => metaobj.get_material(pos),
-            None => Material::ERR_MATERIAL,
-        }
-    }
-
-    fn is_schematic(&self) -> bool {
-        self.obj.strong_count() == 0
+        self.obj.get_material(pos)
     }
 }
+
 impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
     fn find_intersection(&self, ray: Ray) -> Option<f64> {
         self.p.find_intersection(ray)

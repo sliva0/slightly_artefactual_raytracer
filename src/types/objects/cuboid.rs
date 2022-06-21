@@ -64,7 +64,7 @@ impl MetaTracingObject for Cuboid {
             );
 
             objects.extend(ObjectPolygon::collect_cuboid_face(
-                Arc::downgrade(&self),
+                &self,
                 self.pos,
                 dir,
                 sides,

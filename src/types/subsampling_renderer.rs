@@ -186,10 +186,9 @@ impl SubsamplingRenderer {
     }
 
     fn get_pixel_color(x: u32, y: u32, image: &Image) -> Color {
-        match image[y as usize][x as usize].get_color() {
-            Some(color) => color,
-            None => panic!("Some pixels somehow didn't render"),
-        }
+        image[y as usize][x as usize]
+            .get_color()
+            .expect("Some pixels somehow didn't render")
     }
 
     pub fn render_and_save(&self, path: &str, func: SubsamplingFunc) {
