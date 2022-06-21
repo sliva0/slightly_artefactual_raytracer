@@ -2,7 +2,7 @@ use std::ops::Mul;
 
 use super::{Vector, BASIS};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct Matrix {
     x: Vector,
     y: Vector,

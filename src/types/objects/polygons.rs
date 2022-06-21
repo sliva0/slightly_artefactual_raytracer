@@ -39,12 +39,12 @@ impl Plane {
         Self { n, d: -n * v[0] }
     }
 
-    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
-        let m = dir * self.n;
+    fn find_intersection(&self, ray: Ray) -> Option<f64> {
+        let m = ray.dir * self.n;
         if m.is_subnormal() {
             return None
         }
-        let dist =  -(start * self.n + self.d) / m;
+        let dist =  -(ray.start * self.n + self.d) / m;
 
         if dist > 0.0 {
             Some(dist)
@@ -70,9 +70,9 @@ impl Polygon {
         }
     }
 
-    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
-        let dist = self.plane.find_intersection(start, dir)?;
-        let pos = start + dir * dist;
+    fn find_intersection(&self, ray: Ray) -> Option<f64> {
+        let dist = self.plane.find_intersection(ray)?;
+        let pos = ray.get_point(dist);
 
         let m = get_vec_pairs(
             self.e
@@ -148,12 +148,12 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
         }
     }
 
-    fn is_shematic(&self) -> bool {
+    fn is_schematic(&self) -> bool {
         self.obj.strong_count() == 0
     }
 }
 impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
-    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
-        self.p.find_intersection(start, dir)
+    fn find_intersection(&self, ray: Ray) -> Option<f64> {
+        self.p.find_intersection(ray)
     }
 }

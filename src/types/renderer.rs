@@ -18,14 +18,15 @@ impl Renderer {
         (self.resolution.0 as f64, self.resolution.1 as f64)
     }
 
-    fn get_ray_dir(&self, pixel: Coord) -> Vector {
+    fn get_ray(&self, pixel: Coord) -> Ray {
         let (x, y) = (pixel.0 as f64, pixel.1 as f64);
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
         let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
 
-        self.cam.rotate_ray(Vector { x, y, z }).normalize()
+        let dir = self.cam.rotate_ray(Vector { x, y, z }).normalize();
+        Ray::new(self.cam.pos, dir)
     }
 
     fn render_line(&self, line_num: usize, line: &mut Vec<Color>, tx: SyncSender<()>) {
@@ -33,8 +34,8 @@ impl Renderer {
         let mut pixel_cnt = 0;
 
         for i in 0..columns {
-            let ray_dir = self.get_ray_dir((i, line_num));
-            line.push(self.scene.compute_ray(self.cam.pos, ray_dir));
+            let ray = self.get_ray((i, line_num));
+            line.push(self.scene.compute_ray(ray));
 
             pixel_cnt += 1;
             if pixel_cnt % PORTIONS_SIZE == 0 {

@@ -66,14 +66,15 @@ impl SubsamplingRenderer {
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
     }
 
-    fn get_ray_dir(&self, pixel: Coord) -> Vector {
+    fn get_ray(&self, pixel: Coord) -> Ray {
         let (x, y) = (pixel.0 as f64, pixel.1 as f64);
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
         let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
 
-        self.cam.rotate_ray(Vector { x, y, z }).normalize()
+        let dir = self.cam.rotate_ray(Vector { x, y, z }).normalize();
+        Ray::new(self.cam.pos, dir)
     }
 
     fn render_line(&self, line_num: usize, line: &mut Vec<Pixel>, tx: SyncSender<()>) {
@@ -82,8 +83,8 @@ impl SubsamplingRenderer {
 
         for i in 0..columns {
             if let PixelToRender = line[i] {
-                let ray_dir = self.get_ray_dir((i, line_num));
-                line[i] = RenderedPixel(self.scene.compute_ray(self.cam.pos, ray_dir));
+                let ray = self.get_ray((i, line_num));
+                line[i] = RenderedPixel(self.scene.compute_ray(ray));
             }
 
             pixel_cnt += 1;

@@ -1,6 +1,14 @@
+use std::sync::Arc;
+
 use super::*;
 
 pub struct DummyObject;
+
+impl DummyObject {
+    pub fn new() -> ObjectType {
+        Arc::new(Self)
+    }
+}
 
 impl Object for DummyObject {
     fn get_color(&self, _pos: Point) -> Color {
@@ -12,7 +20,7 @@ impl Object for DummyObject {
     fn get_material(&self, _pos: Point) -> Material {
         Material::ERR_MATERIAL
     }
-    fn is_shematic(&self) -> bool {
+    fn is_schematic(&self) -> bool {
         true
     }
 }

@@ -20,30 +20,30 @@ pub trait Object: Upcast + Sync + Send {
     fn get_color(&self, pos: Point) -> Color;
     fn get_normal(&self, pos: Point) -> Vector;
     fn get_material(&self, pos: Point) -> Material;
-    fn is_shematic(&self) -> bool {
+    fn is_schematic(&self) -> bool {
         false
     }
 }
 
 pub trait MarchingObject: Object {
-    fn check_sdf(&self, pos: Point) -> f64;
+    fn get_sdf(&self, pos: Point) -> f64;
 
     //SDF derivative
     fn sdf_drv(&self, pos: Point, delta: Vector) -> f64 {
-        self.check_sdf(pos + delta) - self.check_sdf(pos - delta)
+        self.get_sdf(pos + delta) - self.get_sdf(pos - delta)
     }
 
-    fn get_normal(&self, pos: Point) -> Vector {
+    fn _get_normal(&self, pos: Point) -> Vector {
         Vector {
-            x: self.sdf_drv(pos, Vector { x: EPSILON, ..ORIGIN }),
-            y: self.sdf_drv(pos, Vector { y: EPSILON, ..ORIGIN }),
-            z: self.sdf_drv(pos, Vector { z: EPSILON, ..ORIGIN }),
+            x: self.sdf_drv(pos, BASIS[0]),
+            y: self.sdf_drv(pos, BASIS[1]),
+            z: self.sdf_drv(pos, BASIS[2]),
         }
     }
 }
 
 pub trait TracingObject: Object {
-    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64>;
+    fn find_intersection(&self, ray: Ray) -> Option<f64>;
 }
 
 pub trait MetaTracingObject: Sync + Send {
@@ -64,7 +64,7 @@ pub trait LightSource: Sync + Send {
     fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
         let dir = self._get_light_dir(pos);
         let dist = self.get_dist(pos);
-        if scene.compute_shadow_ray(pos, -dir, dist) {
+        if scene.compute_shadow_ray(Ray::new(pos, -dir), dist) {
             None
         } else {
             Some(dir)

@@ -34,22 +34,22 @@ impl Object for Sphere {
         self.material
     }
 
-    fn is_shematic(&self) -> bool {
+    fn is_schematic(&self) -> bool {
         self.schematic
     }
 }
 
 impl MarchingObject for Sphere {
-    fn check_sdf(&self, pos: Point) -> f64 {
+    fn get_sdf(&self, pos: Point) -> f64 {
         self.pos.dist(pos) - self.radius
     }
 }
 
 impl TracingObject for Sphere {
-    fn find_intersection(&self, start: Point, dir: Vector) -> Option<f64> {
+    fn find_intersection(&self, ray: Ray) -> Option<f64> {
         let r = self.radius;
-        let l = start >> self.pos;
-        let s = l * dir;
+        let l = ray.start >> self.pos;
+        let s = l * ray.dir;
         let delta = (r * r + s * s - l * l).sqrt();
         if delta.is_nan() {
             None

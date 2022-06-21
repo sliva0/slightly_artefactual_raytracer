@@ -32,7 +32,7 @@ fn main() {
                         diffuse: 1.0,
                         specular: 0.7,
                         shininess: 200,
-                        m_type: ReflectiveType { reflectance: 0.3 },
+                        type_: ReflectiveType { reflectance: 0.3 },
                     },
                 }),
                 Arc::new(Cuboid::new(
@@ -44,7 +44,7 @@ fn main() {
                         diffuse: 1.0,
                         specular: 0.7,
                         shininess: 100,
-                        m_type: ReflectiveType { reflectance: 0.3 },
+                        type_: ReflectiveType { reflectance: 0.3 },
                     },
                 )),
             ],

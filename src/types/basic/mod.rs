@@ -10,3 +10,6 @@ pub use matrix::Matrix;
 mod material;
 pub use material::Material;
 pub use material::MaterialType::*;
+
+mod ray;
+pub use ray::Ray;

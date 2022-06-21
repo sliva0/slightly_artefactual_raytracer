@@ -24,7 +24,7 @@ impl Object for Room {
     }
 
     fn get_normal(&self, pos: Point) -> Vector {
-        MarchingObject::get_normal(self, pos)
+        MarchingObject::_get_normal(self, pos)
     }
 
     fn get_material(&self, _pos: Point) -> Material {
@@ -33,7 +33,7 @@ impl Object for Room {
 }
 
 impl MarchingObject for Room {
-    fn check_sdf(&self, pos: Point) -> f64 {
+    fn get_sdf(&self, pos: Point) -> f64 {
         let arr: [f64; 3] = pos.into();
         self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
     }

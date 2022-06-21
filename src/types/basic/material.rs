@@ -2,7 +2,7 @@
 pub enum MaterialType {
     DefaultType,
     ReflectiveType { reflectance: f64 },
-    //RefractiveType { n: f64 },
+    RefractiveType { index: f64, transparency: f64 },
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -11,7 +11,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: i32,
-    pub m_type: MaterialType,
+    pub type_: MaterialType,
 }
 
 impl Material {
@@ -20,6 +20,6 @@ impl Material {
         diffuse: 0.0,
         specular: 0.0,
         shininess: 0,
-        m_type: MaterialType::DefaultType,
+        type_: MaterialType::DefaultType,
     };
 }

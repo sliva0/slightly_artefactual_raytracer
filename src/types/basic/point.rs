@@ -47,6 +47,7 @@ impl Point {
         self.x + self.y + self.z
     }
 }
+
 impl Vector {
     pub fn abs(self) -> f64 {
         (self * self).sqrt()
