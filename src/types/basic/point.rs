@@ -28,7 +28,7 @@ impl Point {
         (self >> rhs).abs()
     }
     ///pairwise coordinate multiplication
-    pub fn pmul(self, rhs: Self) -> Self {
+    pub fn pmul(&self, rhs: Self) -> Self {
         Self {
             x: self.x * rhs.x,
             y: self.y * rhs.y,
@@ -36,7 +36,7 @@ impl Point {
         }
     }
     ///pairwise coordinate division
-    pub fn pdiv(self, rhs: Self) -> Self {
+    pub fn pdiv(&self, rhs: Self) -> Self {
         Self {
             x: self.x / rhs.x,
             y: self.y / rhs.y,
@@ -61,10 +61,10 @@ impl Vector {
             ORIGIN
         }
     }
-    pub fn dot(self, rhs: Self) -> f64 {
+    pub fn dot(&self, rhs: Self) -> f64 {
         self.pmul(rhs).sum()
     }
-    pub fn cross(self, rhs: Self) -> Self {
+    pub fn cross(&self, rhs: Self) -> Self {
         Self {
             x: self.y * rhs.z - self.z * rhs.y,
             y: self.z * rhs.x - self.x * rhs.z,
@@ -79,19 +79,19 @@ impl Vector {
         normal: Self,
         n1: f64,
         n2: f64,
-    ) -> (f64, Option<Self>) {
+    ) -> Option<(f64, Self)> {
         let n = n1 / n2;
         let cos_i = -self * normal;
         let sin_t2 = n * n * (1.0 - cos_i * cos_i);
         if sin_t2 >= 1.0 {
-            return (1.0, None); //total internal reflection
+            return None; //total internal reflection
         }
         let cos_t = (1.0 - sin_t2).sqrt();
         let r1 = (n1 * cos_i - n2 * cos_t) / (n1 * cos_i + n2 * cos_t); //Fresnel equations
         let r2 = (n2 * cos_i - n1 * cos_t) / (n2 * cos_i + n1 * cos_t);
 
         let refracted = self * n + normal * (n * cos_i - cos_t); //refracted ray
-        ((r1 * r1 + r2 * r2) / 2.0, Some(refracted))
+        Some(((r1 * r1 + r2 * r2) / 2.0, refracted))
     }
 }
 

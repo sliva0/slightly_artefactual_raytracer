@@ -27,6 +27,7 @@ pub fn get_basis_pairs() -> Vec<(Vector, Vector)> {
     v
 }
 
+#[derive(Debug)]
 pub struct Plane {
     ///plane normal
     n: Vector,
@@ -54,6 +55,7 @@ impl Plane {
     }
 }
 
+#[derive(Debug)]
 struct Polygon {
     ///vertices
     v: [Point; 3],
@@ -94,6 +96,7 @@ impl Polygon {
     }
 }
 
+#[derive(Debug)]
 pub struct ObjectPolygon<T: MetaTracingObject> {
     p: Polygon,
     obj: Arc<T>,
@@ -139,8 +142,8 @@ impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
         self.p.get_normal()
     }
 
-    fn get_material(&self, pos: Point) -> Material {
-        self.obj.get_material(pos)
+    fn get_material(&self) -> Material {
+        self.obj.get_material()
     }
 }
 

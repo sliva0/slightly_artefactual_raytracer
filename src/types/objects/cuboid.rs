@@ -5,6 +5,7 @@ use std::sync::Arc;
 use super::polygons::get_basis_pairs;
 use super::*;
 
+#[derive(Debug)]
 pub struct Cuboid {
     pub pos: Point,
     pub size: Point,
@@ -32,7 +33,7 @@ impl Object for Cuboid {
         MarchingObject::_get_normal(self, pos)
     }
 
-    fn get_material(&self, _pos: Point) -> Material {
+    fn get_material(&self) -> Material {
         self.material
     }
 }
@@ -49,7 +50,7 @@ impl MetaTracingObject for Cuboid {
         Object::get_color(self, pos)
     }
 
-    fn get_material(&self, _pos: Point) -> Material {
+    fn get_material(&self) -> Material {
         self.material
     }
 

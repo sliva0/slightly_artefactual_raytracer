@@ -21,68 +21,72 @@ fn main() {
     let renderer = SubsamplingRenderer {
         scene: Scene::new(
             vec![],
-            vec![],
+            vec![Arc::new(Sphere::new(
+                Point {
+                    x: 65.0,
+                    y: 75.0,
+                    z: 75.0,
+                },
+                10.0,
+                Color::new(0, 50, 0),
+                Material {
+                    ambient: 0.2,
+                    diffuse: 1.0,                    
+                    specular: 0.3,
+                    shininess: 100,
+                    m_type: RefractiveType { index: 1.5 },
+                },
+            ))],
+            vec![Arc::new(Room {
+                size: 100.0,
+                square_size: 20.0,
+                colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
+                material: Material {
+                    ambient: 0.05,
+                    diffuse: 1.0,
+                    specular: 0.6,
+                    shininess: 200,
+                    m_type: DefaultType,
+                },
+            })],
             vec![
-                Arc::new(Room {
-                    size: 100.0,
-                    square_size: 20.0,
-                    colors: (Color::new(80, 80, 80), Color::new(200, 200, 200)),
-                    material: Material {
-                        ambient: 0.05,
-                        diffuse: 1.0,
-                        specular: 0.7,
-                        shininess: 200,
-                        type_: ReflectiveType { reflectance: 0.3 },
+                Arc::new(Lamp {
+                    pos: Point {
+                        x: 60.0,
+                        y: 60.0,
+                        z: 70.0,
                     },
+                    color: Color::new(255, 255, 0),
+                    brightness: 800.0,
                 }),
-                Arc::new(Cuboid::new(
-                    Point::new(-10.0, -50.0, -80.0),
-                    Point::new(10.0, 10.0, 20.0),
-                    Color::new(80, 80, 80),
-                    Material {
-                        ambient: 0.05,
-                        diffuse: 1.0,
-                        specular: 0.7,
-                        shininess: 100,
-                        type_: ReflectiveType { reflectance: 0.3 },
+                Arc::new(Lamp {
+                    pos: Point {
+                        x: 80.0,
+                        y: 80.0,
+                        z: 60.0,
                     },
-                )),
-            ],
-            vec![
-                Arc::new(Lamp {
-                    pos: Point::new(10.0, -30.0, -52.0),
-                    color: Color::new(255, 127, 0),
-                    brightness: 3000.0,
-                }),
-                Arc::new(Lamp {
-                    pos: Point::new(-30.0, -30.0, -52.0),
-                    color: Color::new(0, 0, 255),
-                    brightness: 3000.0,
-                }),
-                Arc::new(Lamp {
-                    pos: Point::new(-10.0, -80.0, -75.0),
-                    color: Color::new(180, 120, 255),
-                    brightness: 700.0,
+                    color: Color::new(255, 255, 255),
+                    brightness: 500.0,
                 }),
             ],
-            1,
+            2,
         ),
         cam: Camera::from_angles(
             Point {
-                x: -35.0,
-                y: -80.0,
-                z: 60.0,
+                x: 0.0,
+                y: 70.0,
+                z: 0.0,
             },
-            -15.0,
-            15.0,
+            -150.0,
+            0.0,
         ),
         fov: 60.0,
-        resolution: (800, 450), //(3840, 2160),
-        subsampling_limit: 0.05,
-        supersampling_multiplier: 1,
+        resolution:(480, 270), //(3840, 2160),
+        subsampling_limit: 0.005,
+        supersampling_multiplier: 1, 
     };
 
     let path = "image.png";
-    renderer.render_and_save(path, subsampling_func(5));
+    renderer.render_and_save(path, subsampling_func(4));
     open_image(path);
 }

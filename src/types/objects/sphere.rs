@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use super::*;
+
 pub struct Sphere {
     pub pos: Point,
     pub radius: f64,
@@ -21,6 +22,12 @@ impl Sphere {
     }
 }
 
+impl std::fmt::Debug for Sphere {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Sphere").finish()
+    }
+}
+
 impl Object for Sphere {
     fn get_color(&self, _pos: Point) -> Color {
         self.color
@@ -30,7 +37,7 @@ impl Object for Sphere {
         (self.pos >> pos).normalize()
     }
 
-    fn get_material(&self, _pos: Point) -> Material {
+    fn get_material(&self) -> Material {
         self.material
     }
 

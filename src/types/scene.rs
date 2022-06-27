@@ -5,6 +5,7 @@ enum SdfResult {
     Hit(f64, MarchingObjectType),
 }
 
+#[derive(Debug)]
 struct Hit {
     object: ObjectType,
     depth: f64,
@@ -25,11 +26,16 @@ impl Default for Hit {
 
 impl Hit {
     fn new_tracing(obj: &TracingObjectType, depth: f64, ray: Ray) -> Option<Self> {
+        let object = obj.clone().upcast();
+        let point = ray.get_point(depth);
+        let normal = object.get_normal(point);
+        let shift = normal * EPSILON.copysign(normal * ray.dir);
+
         Some(Self {
-            object: obj.clone().upcast(),
+            object,
             depth,
             point: ray.get_point(depth - EPSILON),
-            crossed_point: ray.get_point(depth),
+            crossed_point: point + shift,
         })
     }
 
@@ -37,12 +43,13 @@ impl Hit {
         let object = obj.clone().upcast();
         let point = ray.get_point(depth);
         let normal = object.get_normal(point);
-        let crossed_point = point + normal * (error + EPSILON).copysign(normal * ray.dir);
+        let shift = normal * (error + EPSILON).copysign(normal * ray.dir);
+
         Some(Self {
             object,
             depth,
             point,
-            crossed_point,
+            crossed_point: point + shift,
         })
     }
 
@@ -53,7 +60,7 @@ impl Hit {
         self.object.get_normal(self.point)
     }
     fn material(&self) -> Material {
-        self.object.get_material(self.point)
+        self.object.get_material()
     }
 }
 
@@ -100,7 +107,7 @@ impl Scene {
             if !S && object.is_schematic() {
                 continue;
             }
-            sdf = sdf.min(object.get_sdf(pos));
+            sdf = sdf.min(object.get_sdf(pos).abs());
             if sdf < EPSILON {
                 return SdfResult::Hit(sdf, object.clone());
             }
@@ -198,32 +205,66 @@ impl Scene {
         final_color
     }
 
-    fn compute_reflected_ray(&self, hit: &Hit, ray: Ray, refl_limit: i32) -> Color {
-        let ray = ray.reflect(hit.point, hit.normal());
-        self.compute_subray(ray, refl_limit - 1)
+    fn compute_reflected_ray(&self, ray: &Ray, hit: &Hit, context: &RayContext) -> Color {
+        let refl_ray = ray.reflect(hit.point, hit.normal());
+        let refl_context = context.reflected_subray_context();
+        self.compute_subray(refl_ray, refl_context)
     }
 
-    fn compute_subray(&self, ray: Ray, refl_limit: i32) -> Color {
-        let hit = self.cast_ray(ray);
-        let color = self.compute_lightning(&hit, ray.dir);
+    // fn compute_refracted_ray(&self, hit: &Hit, ray: Ray, context: RayContext) -> Color {}
 
-        if refl_limit == 0 {
+    fn compute_subray(&self, ray: Ray, context: RayContext) -> Color {
+        let hit = self.cast_ray(ray);
+        let color = || self.compute_lightning(&hit, ray.dir);
+
+
+        if is_debug() {
+            println!("hit ray: \n{ray:?}\n");
+            println!("hit: \n{hit:?}\n");
+        }
+        if context.limit_reached() {
+            let color = color();
+            if is_debug() {
+                println!("final limited color: \n{color:?}\n");
+            }
             return color;
         }
-        match hit.material().type_ {
-            DefaultType => color,
+        match hit.material().m_type {
+            DefaultType => color(),
             ReflectiveType { reflectance } => {
-                let r_color = self.compute_reflected_ray(&hit, ray, refl_limit);
-                color * (1.0 - reflectance) + r_color * reflectance
+                let refl_color = self.compute_reflected_ray(&ray, &hit, &context);
+                color() * (1.0 - reflectance) + refl_color * reflectance
             }
-            RefractiveType {
-                index: _,
-                transparency: _,
-            } => Color::ERR_COLOR,
+            RefractiveType { index: _ } => {
+                let refl_color = self.compute_reflected_ray(&ray, &hit, &context);
+
+                let normal = hit.normal();
+                let normal = normal * -1.0_f64.copysign(normal * ray.dir);
+                let refr_context = context.refracted_subray_context(hit.object);
+
+                match ray.compute_reflectance_and_refract(
+                    normal,
+                    context.refr_index,
+                    refr_context.refr_index,
+                    hit.crossed_point,
+                ) {
+                    None => refl_color, // total internal reflection
+                    Some((reflectance, refr_ray)) => {
+                        if is_debug() {
+                            println!("new context: \n{refr_context:?}\n");
+                        }
+                        let refr_color = self.compute_subray(refr_ray, refr_context);
+                        if is_debug() {
+                            println!("final refr color: \n{refr_color:?}\n");
+                        }
+                        refr_color * (1.0 - reflectance) + refl_color * reflectance
+                    }
+                }
+            }
         }
     }
 
     pub fn compute_ray(&self, ray: Ray) -> Color {
-        self.compute_subray(ray, self.reflection_limit)
+        self.compute_subray(ray, RayContext::new(self.reflection_limit))
     }
 }

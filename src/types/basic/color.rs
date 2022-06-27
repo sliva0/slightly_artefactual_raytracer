@@ -70,9 +70,6 @@ impl Color {
                 max_diff = max_diff.max(i.diff(j));
             }
         }
-        if max_diff > 1.0 {
-            println!("max_diff: {:?}\n colors: {:?}", max_diff, colors);
-        }
         max_diff
     }
 

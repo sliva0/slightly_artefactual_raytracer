@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use super::*;
 
+#[derive(Debug)]
 pub struct DummyObject;
 
 impl DummyObject {
@@ -17,7 +18,7 @@ impl Object for DummyObject {
     fn get_normal(&self, _pos: Point) -> Vector {
         ORIGIN
     }
-    fn get_material(&self, _pos: Point) -> Material {
+    fn get_material(&self) -> Material {
         Material::ERR_MATERIAL
     }
     fn is_schematic(&self) -> bool {

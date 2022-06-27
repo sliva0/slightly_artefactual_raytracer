@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, fmt::Debug};
 
 use super::*;
 
@@ -7,7 +7,7 @@ pub trait Upcast: Sync + Send {
     where
         Self: 'a;
 }
-impl<T: Object> Upcast for T {
+impl<T: Object + Sized> Upcast for T {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
     where
         Self: 'a,
@@ -16,10 +16,10 @@ impl<T: Object> Upcast for T {
     }
 }
 
-pub trait Object: Upcast + Sync + Send {
+pub trait Object: Upcast + Debug {
     fn get_color(&self, pos: Point) -> Color;
     fn get_normal(&self, pos: Point) -> Vector;
-    fn get_material(&self, pos: Point) -> Material;
+    fn get_material(&self) -> Material;
     fn is_schematic(&self) -> bool {
         false
     }
@@ -46,9 +46,9 @@ pub trait TracingObject: Object {
     fn find_intersection(&self, ray: Ray) -> Option<f64>;
 }
 
-pub trait MetaTracingObject: Sync + Send {
+pub trait MetaTracingObject: Sync + Send + Debug {
     fn get_color(&self, pos: Point) -> Color;
-    fn get_material(&self, pos: Point) -> Material;
+    fn get_material(&self) -> Material;
     fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 }
 
