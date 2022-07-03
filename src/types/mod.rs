@@ -25,14 +25,4 @@ pub const LAMP_RADIUS: f64 = 2.0;
 
 pub const EPSILON: f64 = 3_000.0 * f64::EPSILON;
 
-pub const PORTIONS_SIZE: usize = 200;
-
-static mut DEBUG: bool = false;
-fn is_debug() -> bool {
-    unsafe { DEBUG }
-}
-fn _set_debug(value: bool) {
-    unsafe {
-        DEBUG = value;
-    }
-}
+pub const PORTIONS_SIZE: usize = 160;

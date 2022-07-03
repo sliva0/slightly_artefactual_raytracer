@@ -33,7 +33,7 @@ pub trait MarchingObject: Object {
         self.get_sdf(pos + delta) - self.get_sdf(pos - delta)
     }
 
-    fn _get_normal(&self, pos: Point) -> Vector {
+    fn get_sdf_normal(&self, pos: Point) -> Vector {
         Vector {
             x: self.sdf_drv(pos, BASIS[0]),
             y: self.sdf_drv(pos, BASIS[1]),

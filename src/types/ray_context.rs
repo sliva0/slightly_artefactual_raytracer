@@ -42,7 +42,11 @@ impl RayContext {
     fn new_from_objs(refl_limit: i32, refr_objs: ObjectTypeSet) -> Self {
         let mut refr_index = 1.0;
         for obj in refr_objs.iter() {
-            if let RefractiveType { index } = obj.0.get_material().m_type {
+            if let RefractiveType {
+                surface_transparency: _,
+                index,
+            } = obj.0.get_material().m_type
+            {
                 refr_index *= index;
             } else {
                 panic!("Non-refractive object in the set of refractive objects");

@@ -31,10 +31,13 @@ fn main() {
                 Color::new(0, 50, 0),
                 Material {
                     ambient: 0.2,
-                    diffuse: 1.0,                    
+                    diffuse: 1.0,
                     specular: 0.3,
                     shininess: 100,
-                    m_type: RefractiveType { index: 1.5 },
+                    m_type: RefractiveType {
+                        surface_transparency: 1.0,
+                        index: 1.5,
+                    },
                 },
             ))],
             vec![Arc::new(Room {
@@ -81,9 +84,9 @@ fn main() {
             0.0,
         ),
         fov: 60.0,
-        resolution:(480, 270), //(3840, 2160),
+        resolution: (480, 270), //(3840, 2160),
         subsampling_limit: 0.005,
-        supersampling_multiplier: 1, 
+        supersampling_multiplier: 1,
     };
 
     let path = "image.png";

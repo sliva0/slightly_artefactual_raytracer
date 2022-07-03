@@ -5,8 +5,10 @@ pub enum MaterialType {
         reflectance: f64,
     },
     RefractiveType {
+        surface_transparency: f64,
         index: f64,
-        // transparency: f64,
+        // TODO muddiness:
+        // transparency: f64, 
         // color: Color,
     },
 }

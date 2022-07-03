@@ -24,9 +24,11 @@ impl Point {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
+
     pub fn dist(self, rhs: Self) -> f64 {
         (self >> rhs).abs()
     }
+
     ///pairwise coordinate multiplication
     pub fn pmul(&self, rhs: Self) -> Self {
         Self {
@@ -35,6 +37,7 @@ impl Point {
             z: self.z * rhs.z,
         }
     }
+
     ///pairwise coordinate division
     pub fn pdiv(&self, rhs: Self) -> Self {
         Self {
@@ -43,6 +46,7 @@ impl Point {
             z: self.z / rhs.z,
         }
     }
+
     pub fn sum(&self) -> f64 {
         self.x + self.y + self.z
     }
@@ -61,9 +65,11 @@ impl Vector {
             ORIGIN
         }
     }
+
     pub fn dot(&self, rhs: Self) -> f64 {
         self.pmul(rhs).sum()
     }
+
     pub fn cross(&self, rhs: Self) -> Self {
         Self {
             x: self.y * rhs.z - self.z * rhs.y,
@@ -71,15 +77,21 @@ impl Vector {
             z: self.x * rhs.y - self.y * rhs.x,
         }
     }
+
     pub fn reflect(self, normal: Self) -> Self {
         self - normal * (self * normal * 2.0)
     }
+
     pub fn compute_reflectance_and_refract(
         self,
-        normal: Self,
+        mut normal: Self,
         n1: f64,
         n2: f64,
     ) -> Option<(f64, Self)> {
+        if self * normal > 0.0 {
+            normal = -normal;
+        }
+
         let n = n1 / n2;
         let cos_i = -self * normal;
         let sin_t2 = n * n * (1.0 - cos_i * cos_i);
@@ -100,6 +112,7 @@ impl From<Point> for [f64; 3] {
         [p.x, p.y, p.z]
     }
 }
+
 impl Add for Point {
     type Output = Self;
     fn add(self, rhs: Vector) -> Self {
@@ -110,6 +123,7 @@ impl Add for Point {
         }
     }
 }
+
 impl Sub for Point {
     type Output = Self;
     fn sub(self, rhs: Vector) -> Self {
@@ -120,6 +134,7 @@ impl Sub for Point {
         }
     }
 }
+
 impl Mul<f64> for Vector {
     type Output = Vector;
     fn mul(self, rhs: f64) -> Vector {
@@ -130,6 +145,7 @@ impl Mul<f64> for Vector {
         }
     }
 }
+
 impl Div<f64> for Vector {
     type Output = Vector;
     fn div(self, rhs: f64) -> Vector {
@@ -140,6 +156,7 @@ impl Div<f64> for Vector {
         }
     }
 }
+
 impl Neg for Vector {
     type Output = Self;
     fn neg(self) -> Self {
@@ -153,12 +170,14 @@ impl Mul for Vector {
         self.dot(rhs)
     }
 }
+
 impl BitXor for Vector {
     type Output = Self;
     fn bitxor(self, rhs: Self) -> Self {
         self.cross(rhs)
     }
 }
+
 impl Shr for Point {
     type Output = Vector;
     fn shr(self, rhs: Self) -> Vector {

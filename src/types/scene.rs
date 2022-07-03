@@ -205,61 +205,46 @@ impl Scene {
         final_color
     }
 
-    fn compute_reflected_ray(&self, ray: &Ray, hit: &Hit, context: &RayContext) -> Color {
+    fn compute_reflected_case(&self, ray: Ray, hit: &Hit, context: &RayContext) -> Color {
         let refl_ray = ray.reflect(hit.point, hit.normal());
         let refl_context = context.reflected_subray_context();
         self.compute_subray(refl_ray, refl_context)
     }
 
-    // fn compute_refracted_ray(&self, hit: &Hit, ray: Ray, context: RayContext) -> Color {}
+    fn compute_refracted_case(&self, ray: Ray, hit: Hit, context: &RayContext) -> Color {
+        let refl_color = self.compute_reflected_case(ray, &hit, &context);
+        let normal = hit.normal();
+        let refr_context = context.refracted_subray_context(hit.object);
+        match ray.compute_reflectance_and_refract(
+            normal,
+            context.refr_index,
+            refr_context.refr_index,
+            hit.crossed_point,
+        ) {
+            None => refl_color, // total internal reflection
+            Some((reflectance, refr_ray)) => {
+                let refr_color = self.compute_subray(refr_ray, refr_context);
+                refr_color * (1.0 - reflectance) + refl_color * reflectance
+            }
+        }
+    }
 
     fn compute_subray(&self, ray: Ray, context: RayContext) -> Color {
         let hit = self.cast_ray(ray);
-        let color = || self.compute_lightning(&hit, ray.dir);
+        let color = self.compute_lightning(&hit, ray.dir);
 
-
-        if is_debug() {
-            println!("hit ray: \n{ray:?}\n");
-            println!("hit: \n{hit:?}\n");
-        }
         if context.limit_reached() {
-            let color = color();
-            if is_debug() {
-                println!("final limited color: \n{color:?}\n");
-            }
             return color;
         }
         match hit.material().m_type {
-            DefaultType => color(),
+            DefaultType => color,
             ReflectiveType { reflectance } => {
-                let refl_color = self.compute_reflected_ray(&ray, &hit, &context);
-                color() * (1.0 - reflectance) + refl_color * reflectance
+                let refl_color = self.compute_reflected_case(ray, &hit, &context);
+                color * (1.0 - reflectance) + refl_color * reflectance
             }
-            RefractiveType { index: _ } => {
-                let refl_color = self.compute_reflected_ray(&ray, &hit, &context);
-
-                let normal = hit.normal();
-                let normal = normal * -1.0_f64.copysign(normal * ray.dir);
-                let refr_context = context.refracted_subray_context(hit.object);
-
-                match ray.compute_reflectance_and_refract(
-                    normal,
-                    context.refr_index,
-                    refr_context.refr_index,
-                    hit.crossed_point,
-                ) {
-                    None => refl_color, // total internal reflection
-                    Some((reflectance, refr_ray)) => {
-                        if is_debug() {
-                            println!("new context: \n{refr_context:?}\n");
-                        }
-                        let refr_color = self.compute_subray(refr_ray, refr_context);
-                        if is_debug() {
-                            println!("final refr color: \n{refr_color:?}\n");
-                        }
-                        refr_color * (1.0 - reflectance) + refl_color * reflectance
-                    }
-                }
+            RefractiveType {  surface_transparency, index: _ } => {
+                let refr_color = self.compute_refracted_case(ray, hit, &context);
+                color * (1.0 - surface_transparency) + refr_color * surface_transparency
             }
         }
     }

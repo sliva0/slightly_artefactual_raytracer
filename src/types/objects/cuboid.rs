@@ -30,7 +30,7 @@ impl Object for Cuboid {
     }
 
     fn get_normal(&self, pos: Point) -> Vector {
-        MarchingObject::_get_normal(self, pos)
+        MarchingObject::get_sdf_normal(self, pos)
     }
 
     fn get_material(&self) -> Material {

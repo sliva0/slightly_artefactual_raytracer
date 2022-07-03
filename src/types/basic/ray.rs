@@ -15,13 +15,6 @@ impl Ray {
         self.start + self.dir * dist
     }
 
-    pub fn push(&self, dist: f64) -> Self {
-        Self {
-            start: self.start + self.dir * dist,
-            dir: self.dir,
-        }
-    }
-
     pub fn reflect(&self, pos: Point, normal: Vector) -> Self {
         Self::new(pos, self.dir.reflect(normal))
     }

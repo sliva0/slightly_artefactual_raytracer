@@ -2,6 +2,7 @@
 
 use super::*;
 
+#[derive(Debug)]
 pub struct Sphere {
     pub pos: Point,
     pub radius: f64,
@@ -19,12 +20,6 @@ impl Sphere {
             material,
             schematic: false,
         }
-    }
-}
-
-impl std::fmt::Debug for Sphere {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Sphere").finish()
     }
 }
 
