@@ -84,7 +84,7 @@ impl SubsamplingRenderer {
         for i in 0..columns {
             if let PixelToRender = line[i] {
                 let ray = self.get_ray((i, line_num));
-                line[i] = RenderedPixel(self.scene.compute_ray(ray));
+                line[i] = RenderedPixel(self.scene.trace_ray(ray));
             }
 
             pixel_cnt += 1;

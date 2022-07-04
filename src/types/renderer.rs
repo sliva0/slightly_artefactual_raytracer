@@ -35,7 +35,7 @@ impl Renderer {
 
         for i in 0..columns {
             let ray = self.get_ray((i, line_num));
-            line.push(self.scene.compute_ray(ray));
+            line.push(self.scene.trace_ray(ray));
 
             pixel_cnt += 1;
             if pixel_cnt % PORTIONS_SIZE == 0 {

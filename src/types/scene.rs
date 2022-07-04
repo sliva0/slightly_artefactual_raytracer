@@ -130,7 +130,7 @@ impl Scene {
         }
     }
 
-    fn trace_ray(&self, ray: Ray) -> Option<Hit> {
+    fn cast_ray(&self, ray: Ray) -> Option<Hit> {
         let mut distance = f64::INFINITY;
         let mut hit = None;
 
@@ -149,7 +149,7 @@ impl Scene {
         self.march_ray::<false>(ray, max_depth).is_some()
     }
 
-    fn trace_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
+    fn cast_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
         for obj in self.tracing_objs.iter() {
             if obj.is_schematic() {
                 continue;
@@ -164,13 +164,13 @@ impl Scene {
         false
     }
 
-    fn cast_ray(&self, ray: Ray) -> Hit {
-        let hit = self.trace_ray(ray).unwrap_or_default();
+    fn compute_ray(&self, ray: Ray) -> Hit {
+        let hit = self.cast_ray(ray).unwrap_or_default();
         self.march_ray::<true>(ray, hit.depth).unwrap_or(hit)
     }
 
     pub fn compute_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
-        self.march_shadow_ray(ray, max_depth) || self.trace_shadow_ray(ray, max_depth)
+        self.march_shadow_ray(ray, max_depth) || self.cast_shadow_ray(ray, max_depth)
     }
 
     fn compute_lightning(&self, hit: &Hit, dir: Vector) -> Color {
@@ -208,7 +208,7 @@ impl Scene {
     fn compute_reflected_case(&self, ray: Ray, hit: &Hit, context: &RayContext) -> Color {
         let refl_ray = ray.reflect(hit.point, hit.normal());
         let refl_context = context.reflected_subray_context();
-        self.compute_subray(refl_ray, refl_context)
+        self.trace_subray(refl_ray, refl_context)
     }
 
     fn compute_refracted_case(&self, ray: Ray, hit: Hit, context: &RayContext) -> Color {
@@ -223,14 +223,14 @@ impl Scene {
         ) {
             None => refl_color, // total internal reflection
             Some((reflectance, refr_ray)) => {
-                let refr_color = self.compute_subray(refr_ray, refr_context);
+                let refr_color = self.trace_subray(refr_ray, refr_context);
                 refr_color * (1.0 - reflectance) + refl_color * reflectance
             }
         }
     }
 
-    fn compute_subray(&self, ray: Ray, context: RayContext) -> Color {
-        let hit = self.cast_ray(ray);
+    fn trace_subray(&self, ray: Ray, context: RayContext) -> Color {
+        let hit = self.compute_ray(ray);
         let color = self.compute_lightning(&hit, ray.dir);
 
         if context.limit_reached() {
@@ -249,7 +249,7 @@ impl Scene {
         }
     }
 
-    pub fn compute_ray(&self, ray: Ray) -> Color {
-        self.compute_subray(ray, RayContext::new(self.reflection_limit))
+    pub fn trace_ray(&self, ray: Ray) -> Color {
+        self.trace_subray(ray, RayContext::new(self.reflection_limit))
     }
 }
