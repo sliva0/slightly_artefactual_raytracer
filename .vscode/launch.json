@@ -1,40 +1,18 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'rs_raytracer'",
+            "name": "Debug executable 'slightly_artefactual_raytracer'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=rs_raytracer",
-                    "--package=rs_raytracer"
+                    "--bin=slightly_artefactual_raytracer",
+                    "--package=slightly_artefactual_raytracer"
                 ],
                 "filter": {
-                    "name": "rs_raytracer",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'rs_raytracer'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=rs_raytracer",
-                    "--package=rs_raytracer"
-                ],
-                "filter": {
-                    "name": "rs_raytracer",
+                    "name": "slightly_artefactual_raytracer",
                     "kind": "bin"
                 }
             },

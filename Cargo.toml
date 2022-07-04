@@ -1,5 +1,5 @@
 [package]
-name = "rs_raytracer"
+name = "slightly_artefactual_raytracer"
 version = "0.1.0"
 edition = "2021"
 
