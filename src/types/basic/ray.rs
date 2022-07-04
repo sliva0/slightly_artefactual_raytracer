@@ -11,7 +11,7 @@ impl Ray {
         Self { start, dir }
     }
 
-    pub fn get_point(&self, dist: f64) -> Point {
+    pub fn point(&self, dist: f64) -> Point {
         self.start + self.dir * dist
     }
 

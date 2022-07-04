@@ -26,15 +26,15 @@ impl Sphere {
 }
 
 impl Object for Sphere {
-    fn get_color(&self, _pos: Point) -> Color {
+    fn color(&self, _pos: Point) -> Color {
         self.color
     }
 
-    fn get_normal(&self, pos: Point) -> Vector {
+    fn normal(&self, pos: Point) -> Vector {
         (self.pos >> pos).normalize()
     }
 
-    fn get_material(&self) -> Material {
+    fn material(&self) -> Material {
         self.material
     }
 
@@ -44,7 +44,7 @@ impl Object for Sphere {
 }
 
 impl MarchingObject for Sphere {
-    fn get_sdf(&self, pos: Point) -> f64 {
+    fn sdf(&self, pos: Point) -> f64 {
         self.pos.dist(pos) - self.radius
     }
 }

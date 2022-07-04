@@ -11,7 +11,7 @@ fn map_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
         .collect()
 }
 
-pub fn get_basis_pairs() -> Vec<(Vector, Vector)> {
+pub fn basis_pairs() -> Vec<(Vector, Vector)> {
     [
         map_pairs(BASIS, |x, y| (x, y)),
         map_pairs(BASIS, |x, y| (-x, -y)),
@@ -68,7 +68,7 @@ impl Polygon {
 
     fn find_intersection(&self, ray: Ray) -> Option<f64> {
         let dist = self.plane.find_intersection(ray)?;
-        let pos = ray.get_point(dist);
+        let pos = ray.point(dist);
 
         let dot_muls = map_pairs(
             self.edges
@@ -86,17 +86,18 @@ impl Polygon {
         }
     }
 
-    fn get_normal(&self) -> Vector {
+    fn normal(&self) -> Vector {
         self.plane.normal
     }
 }
 
 #[derive(Debug)]
-pub struct ObjectPolygon<T: MetaTracingObject> {
+pub struct ObjectPolygon<T: ReferenceObject> {
     p: Polygon,
     obj: Arc<T>,
 }
-impl<T: MetaTracingObject> ObjectPolygon<T> {
+
+impl<T: ReferenceObject> ObjectPolygon<T> {
     fn new(vertices: [Point; 3], obj: &Arc<T>) -> Arc<Self> {
         Arc::new(Self {
             p: Polygon::new(vertices),
@@ -104,7 +105,8 @@ impl<T: MetaTracingObject> ObjectPolygon<T> {
         })
     }
 }
-impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
+
+impl<T: ReferenceObject + 'static> ObjectPolygon<T> {
     pub fn collect_cuboid_face(
         obj: &Arc<T>,
         shift: Vector,
@@ -112,7 +114,7 @@ impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
         sides: (Vector, Vector),
     ) -> Vec<TracingObjectType> {
         let center = shift + dir;
-        let eps1: f64 = 1.0 + EPSILON; // fill spaces beetween sides
+        let eps1: f64 = 1.0 + EPSILON; // fill spaces between sides
         let sides = (sides.0 * eps1, sides.1 * eps1);
         let c = (
             center + sides.0 + sides.1,
@@ -127,21 +129,21 @@ impl<T: MetaTracingObject + 'static> ObjectPolygon<T> {
     }
 }
 
-impl<T: MetaTracingObject> Object for ObjectPolygon<T> {
-    fn get_color(&self, pos: Point) -> Color {
-        self.obj.get_color(pos)
+impl<T: ReferenceObject> Object for ObjectPolygon<T> {
+    fn color(&self, pos: Point) -> Color {
+        self.obj.color(pos)
     }
 
-    fn get_normal(&self, _pos: Point) -> Vector {
-        self.p.get_normal()
+    fn normal(&self, _pos: Point) -> Vector {
+        self.p.normal()
     }
 
-    fn get_material(&self) -> Material {
-        self.obj.get_material()
+    fn material(&self) -> Material {
+        self.obj.material()
     }
 }
 
-impl<T: MetaTracingObject> TracingObject for ObjectPolygon<T> {
+impl<T:ReferenceObject> TracingObject for ObjectPolygon<T> {
     fn find_intersection(&self, ray: Ray) -> Option<f64> {
         self.p.find_intersection(ray)
     }

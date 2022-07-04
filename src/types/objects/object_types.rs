@@ -19,23 +19,23 @@ impl<T: Object + Sized> Upcast for T {
 }
 
 pub trait Object: Upcast + Debug {
-    fn get_color(&self, pos: Point) -> Color;
-    fn get_normal(&self, pos: Point) -> Vector;
-    fn get_material(&self) -> Material;
+    fn color(&self, pos: Point) -> Color;
+    fn normal(&self, pos: Point) -> Vector;
+    fn material(&self) -> Material;
     fn is_schematic(&self) -> bool {
         false
     }
 }
 
 pub trait MarchingObject: Object {
-    fn get_sdf(&self, pos: Point) -> f64;
+    fn sdf(&self, pos: Point) -> f64;
 
     //SDF derivative
     fn sdf_drv(&self, pos: Point, delta: Vector) -> f64 {
-        self.get_sdf(pos + delta) - self.get_sdf(pos - delta)
+        self.sdf(pos + delta) - self.sdf(pos - delta)
     }
 
-    fn get_sdf_normal(&self, pos: Point) -> Vector {
+    fn sdf_normal(&self, pos: Point) -> Vector {
         BASIS.into_iter_fixed().map(|x| self.sdf_drv(pos, x)).into()
     }
 }
@@ -45,32 +45,45 @@ pub trait TracingObject: Object {
 }
 
 pub trait MetaTracingObject: Sync + Send + Debug {
-    fn get_color(&self, pos: Point) -> Color;
-    fn get_material(&self) -> Material;
     fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 }
 
-pub trait LightSource: Sync + Send {
-    fn _get_light_dir(&self, pos: Point) -> Vector;
-    fn _get_brightness(&self, pos: Point) -> f64;
+pub trait ReferenceObject: MetaTracingObject {
+    fn color(&self, pos: Point) -> Color;
+    fn material(&self) -> Material;
+}
 
-    fn get_dist(&self, pos: Point) -> f64;
-    fn get_color(&self, pos: Point) -> Color;
+impl<T: Object + MetaTracingObject> ReferenceObject for T {
+    fn color(&self, pos: Point) -> Color {
+        Object::color(self, pos)
+    }
+
+    fn material(&self) -> Material {
+        Object::material(self)
+    }
+}
+
+pub trait LightSource: Sync + Send {
+    fn _light_dir(&self, pos: Point) -> Vector;
+    fn _brightness(&self, pos: Point) -> f64;
+
+    fn dist(&self, pos: Point) -> f64;
+    fn color(&self, pos: Point) -> Color;
 
     fn build_schematic_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 
-    fn get_light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
-        let dir = self._get_light_dir(pos);
-        let dist = self.get_dist(pos);
+    fn light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
+        let dir = self._light_dir(pos);
+        let dist = self.dist(pos);
         if scene.compute_shadow_ray(Ray::new(pos, -dir), dist) {
             None
         } else {
             Some(dir)
         }
     }
-    fn get_brightness(&self, pos: Point) -> f64 {
-        let dist = self.get_dist(pos);
-        self._get_brightness(pos) / (dist * dist)
+    fn brightness(&self, pos: Point) -> f64 {
+        let dist = self.dist(pos);
+        self._brightness(pos) / (dist * dist)
     }
 }
 

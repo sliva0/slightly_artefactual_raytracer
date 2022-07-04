@@ -12,13 +12,13 @@ impl DummyObject {
 }
 
 impl Object for DummyObject {
-    fn get_color(&self, _pos: Point) -> Color {
+    fn color(&self, _pos: Point) -> Color {
         Color::ERR_COLOR
     }
-    fn get_normal(&self, _pos: Point) -> Vector {
+    fn normal(&self, _pos: Point) -> Vector {
         ORIGIN
     }
-    fn get_material(&self) -> Material {
+    fn material(&self) -> Material {
         Material::ERR_MATERIAL
     }
     fn is_schematic(&self) -> bool {

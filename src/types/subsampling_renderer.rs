@@ -27,7 +27,7 @@ enum Pixel {
 }
 
 impl Pixel {
-    fn get_color(&self) -> Option<Color> {
+    fn color(&self) -> Option<Color> {
         if let RenderedPixel(col) | InterpolatedPixel(col) = self {
             Some(*col)
         } else {
@@ -48,7 +48,7 @@ pub struct SubsamplingRenderer {
 }
 
 impl SubsamplingRenderer {
-    fn get_resolution(&self) -> (usize, usize) {
+    fn resolution(&self) -> (usize, usize) {
         (
             (self.resolution.0 * self.supersampling_multiplier),
             (self.resolution.1 * self.supersampling_multiplier),
@@ -56,17 +56,17 @@ impl SubsamplingRenderer {
     }
 
     fn f64_resolution(&self) -> (f64, f64) {
-        let (x, y) = self.get_resolution();
+        let (x, y) = self.resolution();
         (x as f64, y as f64)
     }
 
     fn is_edge(&self, pixel: Coord) -> bool {
         let (x, y) = pixel;
-        let (xs, ys) = self.get_resolution();
+        let (xs, ys) = self.resolution();
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
     }
 
-    fn get_ray(&self, pixel: Coord) -> Ray {
+    fn ray(&self, pixel: Coord) -> Ray {
         let (x, y) = (pixel.0 as f64, pixel.1 as f64);
         let (xs, ys) = self.f64_resolution();
 
@@ -78,12 +78,12 @@ impl SubsamplingRenderer {
     }
 
     fn render_line(&self, line_num: usize, line: &mut Vec<Pixel>, tx: SyncSender<()>) {
-        let columns = self.get_resolution().0;
+        let columns = self.resolution().0;
         let mut pixel_cnt = 0;
 
         for i in 0..columns {
             if let PixelToRender = line[i] {
-                let ray = self.get_ray((i, line_num));
+                let ray = self.ray((i, line_num));
                 line[i] = RenderedPixel(self.scene.trace_ray(ray));
             }
 
@@ -117,7 +117,7 @@ impl SubsamplingRenderer {
     }
 
     fn interpolate_image(&self, image: &mut Image) {
-        let (ys, xs) = self.get_resolution();
+        let (ys, xs) = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
                 if let PixelToInterpolate = image[x][y] {
@@ -129,7 +129,7 @@ impl SubsamplingRenderer {
 
     fn progress_bar(&self, rx: Receiver<()>) {
         println!("starting render");
-        let (columns, lines) = self.get_resolution();
+        let (columns, lines) = self.resolution();
         let portion_amount = columns / PORTIONS_SIZE * lines;
         for i in 1..=portion_amount {
             rx.recv().unwrap();
@@ -152,7 +152,7 @@ impl SubsamplingRenderer {
     }
 
     fn create_image_template(&self, func: SubsamplingFunc) -> Image {
-        let (columns, lines) = self.get_resolution();
+        let (columns, lines) = self.resolution();
 
         let mut image = Vec::with_capacity(lines);
         let mut line_num = 0;
@@ -185,9 +185,9 @@ impl SubsamplingRenderer {
         image
     }
 
-    fn get_pixel_color(x: u32, y: u32, image: &Image) -> Color {
+    fn pixel_color(x: u32, y: u32, image: &Image) -> Color {
         image[y as usize][x as usize]
-            .get_color()
+            .color()
             .expect("Some pixels somehow didn't render")
     }
 
@@ -201,7 +201,7 @@ impl SubsamplingRenderer {
             let mut colors = Vec::with_capacity((mp * mp) as usize);
             for xi in (x * mp)..((x + 1) * mp) {
                 for yi in (y * mp)..((y + 1) * mp) {
-                    colors.push(Self::get_pixel_color(xi, yi, &image));
+                    colors.push(Self::pixel_color(xi, yi, &image));
                 }
             }
             Color::colors_avg(colors).raw()

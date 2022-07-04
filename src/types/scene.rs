@@ -27,22 +27,22 @@ impl Default for Hit {
 impl Hit {
     fn new_tracing(obj: &TracingObjectType, depth: f64, ray: Ray) -> Option<Self> {
         let object = obj.clone().upcast();
-        let point = ray.get_point(depth);
-        let normal = object.get_normal(point);
+        let point = ray.point(depth);
+        let normal = object.normal(point);
         let shift = normal * EPSILON.copysign(normal * ray.dir);
 
         Some(Self {
             object,
             depth,
-            point: ray.get_point(depth - EPSILON),
+            point: ray.point(depth - EPSILON),
             crossed_point: point + shift,
         })
     }
 
     fn new_marching(obj: &MarchingObjectType, error: f64, depth: f64, ray: Ray) -> Option<Self> {
         let object = obj.clone().upcast();
-        let point = ray.get_point(depth);
-        let normal = object.get_normal(point);
+        let point = ray.point(depth);
+        let normal = object.normal(point);
         let shift = normal * (error + EPSILON).copysign(normal * ray.dir);
 
         Some(Self {
@@ -54,13 +54,13 @@ impl Hit {
     }
 
     fn color(&self) -> Color {
-        self.object.get_color(self.point)
+        self.object.color(self.point)
     }
     fn normal(&self) -> Vector {
-        self.object.get_normal(self.point)
+        self.object.normal(self.point)
     }
     fn material(&self) -> Material {
-        self.object.get_material()
+        self.object.material()
     }
 }
 
@@ -100,14 +100,14 @@ impl Scene {
         scene
     }
 
-    fn get_sdf<const S: bool>(&self, pos: Point) -> SdfResult {
+    fn sdf<const S: bool>(&self, pos: Point) -> SdfResult {
         let mut sdf = f64::INFINITY;
 
         for object in self.marching_objs.iter() {
             if !S && object.is_schematic() {
                 continue;
             }
-            sdf = sdf.min(object.get_sdf(pos).abs());
+            sdf = sdf.min(object.sdf(pos).abs());
             if sdf < EPSILON {
                 return SdfResult::Hit(sdf, object.clone());
             }
@@ -119,8 +119,8 @@ impl Scene {
         let mut depth = EPSILON;
 
         loop {
-            let pos = ray.get_point(depth);
-            match self.get_sdf::<S>(pos) {
+            let pos = ray.point(depth);
+            match self.sdf::<S>(pos) {
                 SdfResult::Hit(sdf, obj) => return Hit::new_marching(&obj, sdf, depth, ray),
                 SdfResult::Miss(sdf) => depth += sdf,
             }
@@ -185,13 +185,13 @@ impl Scene {
         let mut final_color = obj_color * mtrl.ambient;
 
         for source in self.lamps.iter() {
-            if let Some(light_dir) = source.get_light_dir(self, pos) {
+            if let Some(light_dir) = source.light_dir(self, pos) {
                 let angle_cos = -light_dir * normal;
                 if angle_cos <= 0.0 {
                     continue;
                 }
-                let src_color = source.get_color(pos);
-                let brightness = source.get_brightness(pos);
+                let src_color = source.color(pos);
+                let brightness = source.brightness(pos);
 
                 let diffuse_color = obj_color * src_color * (mtrl.diffuse * brightness * angle_cos);
 

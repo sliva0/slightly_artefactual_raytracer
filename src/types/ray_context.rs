@@ -45,7 +45,7 @@ impl RayContext {
             if let RefractiveType {
                 surface_transparency: _,
                 index,
-            } = obj.0.get_material().m_type
+            } = obj.0.material().m_type
             {
                 refr_index *= index;
             } else {

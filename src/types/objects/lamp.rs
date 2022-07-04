@@ -19,19 +19,19 @@ impl Lamp {
 }
 
 impl LightSource for Lamp {
-    fn _get_light_dir(&self, pos: Point) -> Vector {
+    fn _light_dir(&self, pos: Point) -> Vector {
         (self.pos >> pos).normalize()
     }
 
-    fn get_dist(&self, pos: Point) -> f64 {
+    fn dist(&self, pos: Point) -> f64 {
         self.pos.dist(pos)
     }
 
-    fn _get_brightness(&self, _pos: Point) -> f64 {
+    fn _brightness(&self, _pos: Point) -> f64 {
         self.brightness
     }
 
-    fn get_color(&self, _pos: Point) -> Color {
+    fn color(&self, _pos: Point) -> Color {
         self.color
     }
 

@@ -45,7 +45,7 @@ fn main() {
                     diffuse: 1.0,
                     specular: 0.6,
                     shininess: 200,
-                    m_type: DefaultType,
+                    m_type: ReflectiveType { reflectance: 0.3 },
                 },
             )],
             vec![

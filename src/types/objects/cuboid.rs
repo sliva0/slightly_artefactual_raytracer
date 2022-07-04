@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use super::polygons::get_basis_pairs;
+use super::polygons::basis_pairs;
 use super::*;
 
 #[derive(Debug)]
@@ -25,21 +25,21 @@ impl Cuboid {
 }
 
 impl Object for Cuboid {
-    fn get_color(&self, _pos: Point) -> Color {
+    fn color(&self, _pos: Point) -> Color {
         self.color
     }
 
-    fn get_normal(&self, pos: Point) -> Vector {
-        MarchingObject::get_sdf_normal(self, pos)
+    fn normal(&self, pos: Point) -> Vector {
+        MarchingObject::sdf_normal(self, pos)
     }
 
-    fn get_material(&self) -> Material {
+    fn material(&self) -> Material {
         self.material
     }
 }
 
 impl MarchingObject for Cuboid {
-    fn get_sdf(&self, pos: Point) -> f64 {
+    fn sdf(&self, pos: Point) -> f64 {
         (pos - self.pos)
             .iter()
             .zip(self.size)
@@ -49,18 +49,10 @@ impl MarchingObject for Cuboid {
 }
 
 impl MetaTracingObject for Cuboid {
-    fn get_color(&self, pos: Point) -> Color {
-        Object::get_color(self, pos)
-    }
-
-    fn get_material(&self) -> Material {
-        self.material
-    }
-
     fn build_objects(self: Arc<Self>) -> Vec<TracingObjectType> {
         let mut objects = Vec::with_capacity(12);
 
-        for (dir, side) in get_basis_pairs() {
+        for (dir, side) in basis_pairs() {
             let dir = dir.pmul(self.size);
             let sides = (
                 side.pmul(self.size),
