@@ -11,10 +11,25 @@ pub struct Room {
     pub material: Material,
 }
 
+impl Room {
+    pub fn new(
+        size: f64,
+        square_size: f64,
+        colors: (Color, Color),
+        material: Material,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            size,
+            square_size,
+            colors,
+            material,
+        })
+    }
+}
+
 impl Object for Room {
     fn get_color(&self, pos: Point) -> Color {
-        let arr: [f64; 3] = pos.into();
-        let sum: i32 = arr
+        let sum: i32 = pos
             .iter()
             .map(|x| ((x + self.size) / self.square_size).floor() as i32)
             .sum();
@@ -35,8 +50,7 @@ impl Object for Room {
 
 impl MarchingObject for Room {
     fn get_sdf(&self, pos: Point) -> f64 {
-        let arr: [f64; 3] = pos.into();
-        self.size - arr.iter().fold(0f64, |a, b| a.max(b.abs()))
+        self.size - pos.iter().fold(0f64, |a, b| a.max(b.abs()))
     }
 }
 

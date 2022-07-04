@@ -41,11 +41,7 @@ impl Matrix {
 impl Mul<Vector> for Matrix {
     type Output = Vector;
     fn mul(self, rhs: Vector) -> Vector {
-        Vector {
-            x: self.x * rhs,
-            y: self.y * rhs,
-            z: self.z * rhs,
-        }
+        Vector::new(self.x * rhs, self.y * rhs, self.z * rhs)
     }
 }
 

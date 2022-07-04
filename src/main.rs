@@ -1,4 +1,4 @@
-use std::{process::Command, sync::Arc};
+use std::process::Command;
 
 mod types;
 use types::*;
@@ -21,12 +21,8 @@ fn main() {
     let renderer = SubsamplingRenderer {
         scene: Scene::new(
             vec![],
-            vec![Arc::new(Sphere::new(
-                Point {
-                    x: 65.0,
-                    y: 75.0,
-                    z: 75.0,
-                },
+            vec![Sphere::new(
+                Point::new(65.0, 75.0, 75.0),
                 10.0,
                 Color::new(0, 50, 0),
                 Material {
@@ -39,50 +35,30 @@ fn main() {
                         index: 1.5,
                     },
                 },
-            ))],
-            vec![Arc::new(Room {
-                size: 100.0,
-                square_size: 20.0,
-                colors: (Color::new(0, 0, 255), Color::new(255, 0, 0)),
-                material: Material {
+            )],
+            vec![Room::new(
+                100.0,
+                20.0,
+                (Color::new(0, 0, 255), Color::new(255, 0, 0)),
+                Material {
                     ambient: 0.05,
                     diffuse: 1.0,
                     specular: 0.6,
                     shininess: 200,
                     m_type: DefaultType,
                 },
-            })],
+            )],
             vec![
-                Arc::new(Lamp {
-                    pos: Point {
-                        x: 60.0,
-                        y: 60.0,
-                        z: 70.0,
-                    },
-                    color: Color::new(255, 255, 0),
-                    brightness: 800.0,
-                }),
-                Arc::new(Lamp {
-                    pos: Point {
-                        x: 80.0,
-                        y: 80.0,
-                        z: 60.0,
-                    },
-                    color: Color::new(255, 255, 255),
-                    brightness: 500.0,
-                }),
+                Lamp::new(Point::new(60.0, 60.0, 70.0), Color::new(255, 255, 0), 800.0),
+                Lamp::new(
+                    Point::new(80.0, 80.0, 60.0),
+                    Color::new(255, 255, 255),
+                    500.0,
+                ),
             ],
             2,
         ),
-        cam: Camera::from_angles(
-            Point {
-                x: 0.0,
-                y: 70.0,
-                z: 0.0,
-            },
-            -150.0,
-            0.0,
-        ),
+        cam: Camera::from_angles(Point::new(0.0, 70.0, 0.0), -150.0, 0.0),
         fov: 60.0,
         resolution: (480, 270), //(3840, 2160),
         subsampling_limit: 0.005,

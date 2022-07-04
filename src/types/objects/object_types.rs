@@ -1,4 +1,6 @@
-use std::{sync::Arc, fmt::Debug};
+use std::{fmt::Debug, sync::Arc};
+
+use iter_fixed::IntoIteratorFixed;
 
 use super::*;
 
@@ -34,11 +36,7 @@ pub trait MarchingObject: Object {
     }
 
     fn get_sdf_normal(&self, pos: Point) -> Vector {
-        Vector {
-            x: self.sdf_drv(pos, BASIS[0]),
-            y: self.sdf_drv(pos, BASIS[1]),
-            z: self.sdf_drv(pos, BASIS[2]),
-        }
+        BASIS.into_iter_fixed().map(|x| self.sdf_drv(pos, x)).into()
     }
 }
 

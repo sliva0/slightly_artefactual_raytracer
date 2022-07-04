@@ -14,13 +14,13 @@ pub struct Cuboid {
 }
 
 impl Cuboid {
-    pub fn new(pos: Point, size: Point, color: Color, material: Material) -> Self {
-        Self {
+    pub fn new(pos: Point, size: Point, color: Color, material: Material) -> Arc<Self> {
+        Arc::new(Self {
             pos,
             size,
             color,
             material,
-        }
+        })
     }
 }
 
@@ -40,8 +40,11 @@ impl Object for Cuboid {
 
 impl MarchingObject for Cuboid {
     fn get_sdf(&self, pos: Point) -> f64 {
-        let arr: [f64; 3] = (pos.pdiv(self.size)).into();
-        arr.iter().fold(0f64, |a, b| a.max(b.abs()))
+        (pos - self.pos)
+            .iter()
+            .zip(self.size)
+            .map(|(x, s)| x.abs() - s)
+            .fold(f64::INFINITY, f64::min)
     }
 }
 
@@ -65,10 +68,7 @@ impl MetaTracingObject for Cuboid {
             );
 
             objects.extend(ObjectPolygon::collect_cuboid_face(
-                &self,
-                self.pos,
-                dir,
-                sides,
+                &self, self.pos, dir, sides,
             ));
         }
 

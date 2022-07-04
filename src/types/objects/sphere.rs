@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::sync::Arc;
+
 use super::*;
 
 #[derive(Debug)]
@@ -12,14 +14,14 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(pos: Point, radius: f64, color: Color, material: Material) -> Self {
-        Self {
+    pub fn new(pos: Point, radius: f64, color: Color, material: Material) -> Arc<Self> {
+        Arc::new(Self {
             pos,
             radius,
             color,
             material,
             schematic: false,
-        }
+        })
     }
 }
 

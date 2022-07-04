@@ -8,6 +8,16 @@ pub struct Lamp {
     pub brightness: f64,
 }
 
+impl Lamp {
+    pub fn new(pos: Point, color: Color, brightness: f64) -> Arc<Self> {
+        Arc::new(Self {
+            pos,
+            color,
+            brightness,
+        })
+    }
+}
+
 impl LightSource for Lamp {
     fn _get_light_dir(&self, pos: Point) -> Vector {
         (self.pos >> pos).normalize()

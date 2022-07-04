@@ -1,10 +1,7 @@
 use super::{Matrix, Point, Vector};
 
-const _UP: Vector = Vector {
-    x: 0.0,
-    y: 1.0,
-    z: 0.0,
-};
+const _UP: Vector = Vector::new(0.0, 1.0, 0.0);
+
 pub struct Camera {
     pub pos: Point,
     operator: Matrix,
