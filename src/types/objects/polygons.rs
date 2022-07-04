@@ -1,51 +1,46 @@
-use std::{
-    fmt::Debug,
-    sync::Arc,
-};
+use std::{fmt::Debug, sync::Arc};
+
+use iter_fixed::IntoIteratorFixed;
 
 use super::*;
 
-fn get_vec_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: Vec<T>, f: F) -> Vec<O> {
-    p.iter()
-        .enumerate()
-        .map(|(i, &v)| f(v, p[(i + 1) % p.len()]))
+fn map_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
+    p.into_iter_fixed()
+        .zip([p[1], p[2], p[0]])
+        .map(|(a, b)| f(a, b))
         .collect()
 }
 
-pub fn get_pairs<T, const N: usize, O, F>(p: [T; N], f: F) -> [O; N]
-where
-    T: Copy,
-    O: Debug,
-    F: Fn(T, T) -> O,
-{
-    get_vec_pairs(p.to_vec(), f).try_into().unwrap()
-}
-
 pub fn get_basis_pairs() -> Vec<(Vector, Vector)> {
-    let mut v = get_vec_pairs(BASIS.to_vec(), |x, y| (x, y));
-    v.extend(get_vec_pairs(BASIS.to_vec(), |x, y| (-x, -y)));
-    v
+    [
+        map_pairs(BASIS, |x, y| (x, y)),
+        map_pairs(BASIS, |x, y| (-x, -y)),
+    ]
+    .concat()
 }
 
 #[derive(Debug)]
 pub struct Plane {
     ///plane normal
-    n: Vector,
+    normal: Vector,
     ///d from plane equation (ax + by + cz + d = 0), plane shift
-    d: f64,
+    shift: f64,
 }
 impl Plane {
     fn new(v: [Point; 3]) -> Self {
-        let n = ((v[0] >> v[1]) ^ (v[0] >> v[2])).normalize();
-        Self { n, d: -n * v[0] }
+        let normal = ((v[0] >> v[1]) ^ (v[0] >> v[2])).normalize();
+        Self {
+            normal,
+            shift: -normal * v[0],
+        }
     }
 
     fn find_intersection(&self, ray: Ray) -> Option<f64> {
-        let m = ray.dir * self.n;
+        let m = ray.dir * self.normal;
         if m.is_subnormal() {
-            return None
+            return None;
         }
-        let dist =  -(ray.start * self.n + self.d) / m;
+        let dist = -(ray.start * self.normal + self.shift) / m;
 
         if dist > 0.0 {
             Some(dist)
@@ -57,18 +52,17 @@ impl Plane {
 
 #[derive(Debug)]
 struct Polygon {
-    ///vertices
-    v: [Point; 3],
+    vertices: [Point; 3],
     ///edge vectors
-    e: [Point; 3],
+    edges: [Vector; 3],
     plane: Plane,
 }
 impl Polygon {
-    fn new(v: [Point; 3]) -> Self {
+    fn new(vertices: [Point; 3]) -> Self {
         Self {
-            v,
-            e: get_pairs(v, |v1, v2| v1 >> v2),
-            plane: Plane::new(v),
+            vertices,
+            edges: map_pairs(vertices, |v1, v2| v1 >> v2),
+            plane: Plane::new(vertices),
         }
     }
 
@@ -76,15 +70,16 @@ impl Polygon {
         let dist = self.plane.find_intersection(ray)?;
         let pos = ray.get_point(dist);
 
-        let m = get_vec_pairs(
-            self.e
-                .into_iter()
-                .zip(self.v)
+        let dot_muls = map_pairs(
+            self.edges
+                .into_iter_fixed()
+                .zip(self.vertices)
                 .map(|(ei, vi)| ei ^ (vi >> pos))
                 .collect(),
             |v1, v2| v1 * v2,
         );
-        if m.into_iter().all(|x| x >= 0.0) {
+
+        if dot_muls.into_iter().all(|x| x >= 0.0) {
             Some(dist)
         } else {
             None
@@ -92,7 +87,7 @@ impl Polygon {
     }
 
     fn get_normal(&self) -> Vector {
-        self.plane.n
+        self.plane.normal
     }
 }
 
@@ -102,9 +97,9 @@ pub struct ObjectPolygon<T: MetaTracingObject> {
     obj: Arc<T>,
 }
 impl<T: MetaTracingObject> ObjectPolygon<T> {
-    fn new(v: [Point; 3], obj: &Arc<T>) -> Arc<Self> {
+    fn new(vertices: [Point; 3], obj: &Arc<T>) -> Arc<Self> {
         Arc::new(Self {
-            p: Polygon::new(v),
+            p: Polygon::new(vertices),
             obj: obj.clone(),
         })
     }
