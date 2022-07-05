@@ -1,10 +1,10 @@
 #[derive(Debug, Copy, Clone)]
 pub enum MaterialType {
-    DefaultType,
-    ReflectiveType {
+    Common,
+    Reflective {
         reflectance: f64,
     },
-    RefractiveType {
+    Refractive {
         surface_transparency: f64,
         index: f64,
         // TODO muddiness:
@@ -28,6 +28,6 @@ impl Material {
         diffuse: 0.0,
         specular: 0.0,
         shininess: 0,
-        m_type: MaterialType::DefaultType,
+        m_type: MaterialType::Common,
     };
 }

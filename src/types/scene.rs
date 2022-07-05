@@ -74,10 +74,10 @@ pub struct Scene {
 
 impl Scene {
     fn build_meta_objects(&mut self) {
-        for object in self.meta_objs.to_vec() {
+        for object in self.meta_objs.iter().cloned() {
             self.tracing_objs.extend(object.build_objects());
         }
-        for lamp in self.lamps.to_vec() {
+        for lamp in self.lamps.iter().cloned() {
             self.tracing_objs.extend(lamp.build_schematic_objects());
         }
     }
@@ -137,7 +137,7 @@ impl Scene {
         for obj in self.tracing_objs.iter() {
             if let Some(dist) = obj.find_intersection(ray) {
                 if dist < distance && dist > EPSILON {
-                    hit = Hit::new_tracing(&obj, dist, ray);
+                    hit = Hit::new_tracing(obj, dist, ray);
                     distance = dist;
                 }
             }
@@ -212,7 +212,7 @@ impl Scene {
     }
 
     fn compute_refracted_case(&self, ray: Ray, hit: Hit, context: &RayContext) -> Color {
-        let refl_color = self.compute_reflected_case(ray, &hit, &context);
+        let refl_color = self.compute_reflected_case(ray, &hit, context);
         let normal = hit.normal();
         let refr_context = context.refracted_subray_context(hit.object);
         match ray.compute_reflectance_and_refract(
@@ -237,12 +237,12 @@ impl Scene {
             return color;
         }
         match hit.material().m_type {
-            DefaultType => color,
-            ReflectiveType { reflectance } => {
+            Common => color,
+            Reflective { reflectance } => {
                 let refl_color = self.compute_reflected_case(ray, &hit, &context);
                 color * (1.0 - reflectance) + refl_color * reflectance
             }
-            RefractiveType {  surface_transparency, index: _ } => {
+            Refractive {  surface_transparency, index: _ } => {
                 let refr_color = self.compute_refracted_case(ray, hit, &context);
                 color * (1.0 - surface_transparency) + refr_color * surface_transparency
             }

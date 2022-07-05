@@ -5,9 +5,15 @@ use super::*;
 #[derive(Clone, Debug)]
 struct HashWrapper(ObjectType);
 
+impl HashWrapper {
+    fn as_ptr(&self) -> *const () {
+        Arc::as_ptr(&self.0) as *const ()
+    }
+}
+
 impl PartialEq for HashWrapper {
     fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
+        self.as_ptr() == other.as_ptr()
     }
 }
 
@@ -15,13 +21,13 @@ impl Eq for HashWrapper {}
 
 impl Hash for HashWrapper {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        Arc::as_ptr(&self.0).hash(state)
+        self.as_ptr().hash(state)
     }
 }
 
-impl Into<HashWrapper> for ObjectType {
-    fn into(self) -> HashWrapper {
-        HashWrapper(self)
+impl From<ObjectType> for HashWrapper {
+    fn from(obj: ObjectType) -> HashWrapper {
+        HashWrapper(obj)
     }
 }
 
@@ -42,7 +48,7 @@ impl RayContext {
     fn new_from_objs(refl_limit: i32, refr_objs: ObjectTypeSet) -> Self {
         let mut refr_index = 1.0;
         for obj in refr_objs.iter() {
-            if let RefractiveType {
+            if let Refractive {
                 surface_transparency: _,
                 index,
             } = obj.0.material().m_type

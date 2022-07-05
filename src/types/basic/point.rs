@@ -44,12 +44,7 @@ impl Point {
         self.map_binary_op(rhs, f64::mul)
     }
 
-    ///pairwise coordinate division
-    pub fn pdiv(&self, rhs: Self) -> Self {
-        self.map_binary_op(rhs, f64::div)
-    }
-
-    pub fn iter<'a>(&'a self) -> Iter<'a, f64> {
+    pub fn iter(&self) -> Iter<'_, f64> {
         self.0.iter()
     }
 
@@ -180,6 +175,7 @@ impl BitXor for Vector {
     }
 }
 
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl Shr for Point {
     type Output = Vector;
     fn shr(self, rhs: Self) -> Vector {

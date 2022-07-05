@@ -20,15 +20,15 @@ pub fn subsampling_func(subsample_number: i32) -> SubsamplingFunc {
 }
 
 enum Pixel {
-    PixelToRender,
-    PixelToInterpolate,
-    RenderedPixel(Color),
-    InterpolatedPixel(Color),
+    ToRender,
+    ToInterpolate,
+    Rendered(Color),
+    Interpolated(Color),
 }
 
 impl Pixel {
     fn color(&self) -> Option<Color> {
-        if let RenderedPixel(col) | InterpolatedPixel(col) = self {
+        if let Rendered(col) | Interpolated(col) = self {
             Some(*col)
         } else {
             None
@@ -66,7 +66,7 @@ impl SubsamplingRenderer {
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
     }
 
-    fn ray(&self, pixel: Coord) -> Ray {
+    fn create_ray(&self, pixel: Coord) -> Ray {
         let (x, y) = (pixel.0 as f64, pixel.1 as f64);
         let (xs, ys) = self.f64_resolution();
 
@@ -77,14 +77,13 @@ impl SubsamplingRenderer {
         Ray::new(self.cam.pos, dir)
     }
 
-    fn render_line(&self, line_num: usize, line: &mut Vec<Pixel>, tx: SyncSender<()>) {
-        let columns = self.resolution().0;
+    fn render_line(&self, line_num: usize, line: &mut [Pixel], tx: SyncSender<()>) {
         let mut pixel_cnt = 0;
 
-        for i in 0..columns {
-            if let PixelToRender = line[i] {
-                let ray = self.ray((i, line_num));
-                line[i] = RenderedPixel(self.scene.trace_ray(ray));
+        for (i, pixel) in line.iter_mut().enumerate() {
+            if let ToRender = pixel {
+                let ray = self.create_ray((i, line_num));
+                *pixel = Rendered(self.scene.trace_ray(ray));
             }
 
             pixel_cnt += 1;
@@ -94,11 +93,12 @@ impl SubsamplingRenderer {
         }
     }
 
+    #[allow(clippy::needless_range_loop)]
     fn collect_neighbors(x: usize, y: usize, image: &Image) -> Vec<Color> {
         let mut colors = vec![];
-        for yi in (y - 1)..=(y + 1) {
-            for xi in (x - 1)..=(x + 1) {
-                if let RenderedPixel(color) = image[xi][yi] {
+        for xi in (x - 1)..=(x + 1) {
+            for yi in (y - 1)..=(y + 1) {
+                if let Rendered(color) = image[xi][yi] {
                     colors.push(color);
                 }
             }
@@ -110,9 +110,9 @@ impl SubsamplingRenderer {
         let colors = Self::collect_neighbors(x, y, image);
 
         if Color::colors_diff(&colors) > self.subsampling_limit {
-            PixelToRender
+            ToRender
         } else {
-            InterpolatedPixel(Color::colors_avg(colors))
+            Interpolated(Color::colors_avg(colors))
         }
     }
 
@@ -120,7 +120,7 @@ impl SubsamplingRenderer {
         let (ys, xs) = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
-                if let PixelToInterpolate = image[x][y] {
+                if let ToInterpolate = image[x][y] {
                     image[x][y] = self.interpolate_pixel(x, y, image)
                 }
             }
@@ -165,9 +165,9 @@ impl SubsamplingRenderer {
                 let pixel = (column_num, line_num);
                 column_num += 1;
                 if self.is_edge(pixel) || func(pixel) {
-                    Pixel::PixelToRender
+                    Pixel::ToRender
                 } else {
-                    Pixel::PixelToInterpolate
+                    Pixel::ToInterpolate
                 }
             });
             line_num += 1;

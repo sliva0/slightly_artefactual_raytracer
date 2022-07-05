@@ -6,7 +6,7 @@ use super::*;
 pub struct DummyObject;
 
 impl DummyObject {
-    pub fn new() -> ObjectType {
+    pub fn new() -> Arc<Self> {
         Arc::new(Self)
     }
 }

@@ -11,7 +11,10 @@ pub use polygons::ObjectPolygon;
 
 mod cuboid;
 mod dummy_object;
+mod marching_helpers;
 mod room;
 mod sphere;
 
-pub use {cuboid::Cuboid, dummy_object::DummyObject, room::Room, sphere::Sphere};
+pub use {
+    cuboid::Cuboid, dummy_object::DummyObject, marching_helpers::Union, room::Room, sphere::Sphere,
+};
