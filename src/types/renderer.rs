@@ -19,7 +19,8 @@ impl Renderer {
     }
 
     fn ray(&self, pixel: Coord) -> Ray {
-        let (x, y) = (pixel.0 as f64, pixel.1 as f64);
+        let [x, y] = pixel;
+        let [x, y] = [x as f64, y as f64];
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
@@ -34,7 +35,7 @@ impl Renderer {
         let mut pixel_cnt = 0;
 
         for i in 0..columns {
-            let ray = self.ray((i, line_num));
+            let ray = self.ray([i, line_num]);
             line.push(self.scene.trace_ray(ray));
 
             pixel_cnt += 1;

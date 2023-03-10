@@ -19,7 +19,7 @@ pub use subsampling_renderer::{subsampling_func, SubsamplingRenderer};
 mod ray_context;
 pub use ray_context::RayContext;
 
-pub type Coord = (usize, usize);
+pub type Coord = [usize; 2];
 
 pub const LAMP_RADIUS: f64 = 2.0;
 

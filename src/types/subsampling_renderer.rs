@@ -1,7 +1,6 @@
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
-
-use crossbeam_utils::thread;
 use image::ImageBuffer;
+use indicatif::ParallelProgressIterator;
+use rayon::prelude::*;
 
 use super::*;
 
@@ -11,10 +10,10 @@ type Image = Vec<Vec<Pixel>>;
 pub fn subsampling_func(subsample_number: i32) -> SubsamplingFunc {
     Box::new(match subsample_number {
         1 => |_| true,
-        2 => |(x, y)| (x + y) % 2 == 0,
-        3 => |(x, y)| (x + y) % 3 == 0,
-        4 => |(x, y)| (x + y * 2) % 4 == 0,
-        5 => |(x, y)| (x + y * 2) % 5 == 0,
+        2 => |[x, y]| (x + y) % 2 == 0,
+        3 => |[x, y]| (x + y) % 3 == 0,
+        4 => |[x, y]| (x + y * 2) % 4 == 0,
+        5 => |[x, y]| (x + y * 2) % 5 == 0,
         _ => panic!("incorrect subsample number"),
     })
 }
@@ -61,13 +60,14 @@ impl SubsamplingRenderer {
     }
 
     fn is_edge(&self, pixel: Coord) -> bool {
-        let (x, y) = pixel;
+        let [x, y] = pixel;
         let (xs, ys) = self.resolution();
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
     }
 
     fn create_ray(&self, pixel: Coord) -> Ray {
-        let (x, y) = (pixel.0 as f64, pixel.1 as f64);
+        let [x, y] = pixel;
+        let [x, y] = [x as f64, y as f64];
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
@@ -75,22 +75,6 @@ impl SubsamplingRenderer {
 
         let dir = self.cam.rotate_ray(Vector::new(x, y, z)).normalize();
         Ray::new(self.cam.pos, dir)
-    }
-
-    fn render_line(&self, line_num: usize, line: &mut [Pixel], tx: SyncSender<()>) {
-        let mut pixel_cnt = 0;
-
-        for (i, pixel) in line.iter_mut().enumerate() {
-            if let ToRender = pixel {
-                let ray = self.create_ray((i, line_num));
-                *pixel = Rendered(self.scene.trace_ray(ray));
-            }
-
-            pixel_cnt += 1;
-            if pixel_cnt % PORTIONS_SIZE == 0 {
-                tx.send(()).unwrap()
-            }
-        }
     }
 
     #[allow(clippy::needless_range_loop)]
@@ -127,28 +111,23 @@ impl SubsamplingRenderer {
         }
     }
 
-    fn progress_bar(&self, rx: Receiver<()>) {
-        println!("starting render");
-        let (columns, lines) = self.resolution();
-        let portion_amount = columns / PORTIONS_SIZE * lines;
-        for i in 1..=portion_amount {
-            rx.recv().unwrap();
-            println!("{} / {}", i, portion_amount);
-        }
-        println!("\ndone");
-    }
-
     fn render_pixels_to_render(&self, image: &mut Image) {
-        thread::scope(|scope| {
-            let (tx, rx) = sync_channel(8);
-            scope.spawn(move |_| self.progress_bar(rx));
-
-            for (line_num, line) in image.iter_mut().enumerate() {
-                let txc = tx.clone();
-                scope.spawn(move |_| self.render_line(line_num, line, txc));
-            }
-        })
-        .unwrap();
+        let pixel_count = image.iter().map(|v| v.len() as u64).sum();
+        image
+            .par_iter_mut()
+            .enumerate()
+            .flat_map(|(line_num, line)| {
+                line.par_iter_mut()
+                    .enumerate()
+                    .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
+            })
+            .progress_count(pixel_count)
+            .for_each(|(coord, pixel)| {
+                if let ToRender = pixel {
+                    let ray = self.create_ray(coord);
+                    *pixel = Rendered(self.scene.trace_ray(ray));
+                }
+            });
     }
 
     fn create_image_template(&self, func: SubsamplingFunc) -> Image {
@@ -162,7 +141,7 @@ impl SubsamplingRenderer {
             let mut column_num = 0;
 
             line.resize_with(columns, || {
-                let pixel = (column_num, line_num);
+                let pixel = [column_num, line_num];
                 column_num += 1;
                 if self.is_edge(pixel) || func(pixel) {
                     Pixel::ToRender
