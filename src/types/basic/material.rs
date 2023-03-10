@@ -8,7 +8,7 @@ pub enum MaterialType {
         surface_transparency: f64,
         index: f64,
         // TODO muddiness:
-        // transparency: f64, 
+        // transparency: f64,
         // color: Color,
     },
 }

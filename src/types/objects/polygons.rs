@@ -143,7 +143,7 @@ impl<T: ReferenceObject> Object for ObjectPolygon<T> {
     }
 }
 
-impl<T:ReferenceObject> TracingObject for ObjectPolygon<T> {
+impl<T: ReferenceObject> TracingObject for ObjectPolygon<T> {
     fn find_intersection(&self, ray: Ray) -> Option<f64> {
         self.p.find_intersection(ray)
     }

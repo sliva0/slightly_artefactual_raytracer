@@ -242,7 +242,10 @@ impl Scene {
                 let refl_color = self.compute_reflected_case(ray, &hit, &context);
                 color * (1.0 - reflectance) + refl_color * reflectance
             }
-            Refractive {  surface_transparency, index: _ } => {
+            Refractive {
+                surface_transparency,
+                index: _,
+            } => {
                 let refr_color = self.compute_refracted_case(ray, hit, &context);
                 color * (1.0 - surface_transparency) + refr_color * surface_transparency
             }

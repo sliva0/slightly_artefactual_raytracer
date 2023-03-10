@@ -71,7 +71,7 @@ impl SubsamplingRenderer {
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
-        let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
+        let z = -ys / (self.fov.to_radians() / 2.0).tan();
 
         let dir = self.cam.rotate_ray(Vector::new(x, y, z)).normalize();
         Ray::new(self.cam.pos, dir)
