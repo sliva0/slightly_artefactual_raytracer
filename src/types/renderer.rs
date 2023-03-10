@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 
-use crossbeam_utils::thread;
 use image::ImageBuffer;
+use indicatif::ParallelProgressIterator;
+use rayon::prelude::*;
 
 use super::*;
 
@@ -30,48 +30,23 @@ impl Renderer {
         Ray::new(self.cam.pos, dir)
     }
 
-    fn render_line(&self, line_num: usize, line: &mut Vec<Color>, tx: SyncSender<()>) {
-        let columns = self.resolution.0;
-        let mut pixel_cnt = 0;
-
-        for i in 0..columns {
-            let ray = self.ray([i, line_num]);
-            line.push(self.scene.trace_ray(ray));
-
-            pixel_cnt += 1;
-            if pixel_cnt % PORTIONS_SIZE == 0 {
-                tx.send(()).unwrap()
-            }
-        }
-    }
-
-    fn progress_bar(&self, rx: Receiver<()>) {
-        let (columns, lines) = self.resolution;
-        let portion_amount = columns / PORTIONS_SIZE * lines;
-        for i in 1..=portion_amount {
-            rx.recv().unwrap();
-            println!("{} / {}", i, portion_amount);
-        }
-        println!("done");
-    }
-
     fn render(&self) -> Vec<Vec<Color>> {
-        let lines = self.resolution.1;
-        let mut image = Vec::with_capacity(lines);
-        image.resize_with(lines, Vec::new);
+        let mut result = vec![vec![Color::ERR_COLOR; self.resolution.0]; self.resolution.1];
 
-        thread::scope(|scope| {
-            let (tx, rx) = sync_channel(8);
-            scope.spawn(move |_| self.progress_bar(rx));
+        result
+            .par_iter_mut()
+            .enumerate()
+            .flat_map(|(line_num, line)| {
+                line.par_iter_mut()
+                    .enumerate()
+                    .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
+            })
+            .progress_count((self.resolution.0 * self.resolution.1) as u64)
+            .for_each(|(coord, pixel)| {
+                *pixel = self.scene.trace_ray(self.ray(coord));
+            });
 
-            for (line_num, line) in image.iter_mut().enumerate() {
-                let txc = tx.clone();
-                scope.spawn(move |_| self.render_line(line_num, line, txc));
-            }
-        })
-        .unwrap();
-
-        image
+        result
     }
 
     pub fn render_and_save(&self, path: &str) {
