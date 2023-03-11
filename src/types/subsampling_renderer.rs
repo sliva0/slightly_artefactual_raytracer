@@ -1,5 +1,7 @@
 use image::ImageBuffer;
-use indicatif::ParallelProgressIterator;
+use indicatif::{
+    MultiProgress, ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle,
+};
 use rayon::prelude::*;
 
 use super::*;
@@ -100,19 +102,19 @@ impl SubsamplingRenderer {
         }
     }
 
-    fn interpolate_image(&self, image: &mut Image) {
+    fn interpolate_image(&self, image: &mut Image, progress_bar: ProgressBar) {
         let (ys, xs) = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
                 if let ToInterpolate = image[x][y] {
-                    image[x][y] = self.interpolate_pixel(x, y, image)
+                    image[x][y] = self.interpolate_pixel(x, y, image);
+                    progress_bar.inc(1);
                 }
             }
         }
     }
 
-    fn render_pixels_to_render(&self, image: &mut Image) {
-        let pixel_count = image.iter().map(|v| v.len() as u64).sum();
+    fn render_pixels_to_render(&self, image: &mut Image, progress_bar: ProgressBar) {
         image
             .par_iter_mut()
             .enumerate()
@@ -121,7 +123,7 @@ impl SubsamplingRenderer {
                     .enumerate()
                     .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
             })
-            .progress_count(pixel_count)
+            .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
                 if let ToRender = pixel {
                     let ray = self.create_ray(coord);
@@ -157,9 +159,39 @@ impl SubsamplingRenderer {
 
     fn render(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
-        self.render_pixels_to_render(&mut image);
-        self.interpolate_image(&mut image);
-        self.render_pixels_to_render(&mut image);
+        let (image_width, image_height) = self.resolution();
+        let pixel_count = (image_width * image_height) as u64;
+        let style = ProgressStyle::with_template(
+            "{msg:14} {elapsed:>3} {wide_bar} {pos}/{len} ETA {eta:>3}",
+        )
+        .unwrap();
+
+        let mpb = MultiProgress::new();
+
+        let pb1 = mpb.add(
+            ProgressBar::new(pixel_count)
+                .with_style(style.clone())
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("First pass"),
+        );
+
+        let pbi = mpb.add(
+            ProgressBar::new(((image_width - 1) * (image_height - 1)) as u64)
+                .with_style(style.clone())
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("Interpolating"),
+        );
+
+        let pb2 = mpb.add(
+            ProgressBar::new(pixel_count)
+                .with_style(style)
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("Second pass"),
+        );
+
+        self.render_pixels_to_render(&mut image, pb1);
+        self.interpolate_image(&mut image, pbi);
+        self.render_pixels_to_render(&mut image, pb2);
 
         image
     }
