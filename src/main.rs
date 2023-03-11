@@ -1,7 +1,6 @@
 use std::process::Command;
 
-mod types;
-use types::*;
+use slightly_artefactual_raytracer::*;
 
 fn open_image(path: &str) {
     if let Some(opener) = {

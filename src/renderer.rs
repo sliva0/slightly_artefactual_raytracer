@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use image::ImageBuffer;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
