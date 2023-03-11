@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use image::ImageBuffer;
-use indicatif::ParallelProgressIterator;
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 
 use super::*;
@@ -31,6 +31,15 @@ impl Renderer {
     }
 
     fn render(&self) -> Vec<Vec<Color>> {
+        let progress_bar = ProgressBar::new((self.resolution.0 * self.resolution.1) as u64)
+            .with_message("Rendering")
+            .with_style(
+                ProgressStyle::with_template(
+                    "{msg} {elapsed:>3} {wide_bar} {pos}/{len} ETA {eta:>3}",
+                )
+                .unwrap(),
+            );
+
         let mut result = vec![vec![Color::ERR_COLOR; self.resolution.0]; self.resolution.1];
 
         result
@@ -41,7 +50,7 @@ impl Renderer {
                     .enumerate()
                     .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
             })
-            .progress_count((self.resolution.0 * self.resolution.1) as u64)
+            .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
                 *pixel = self.scene.trace_ray(self.ray(coord));
             });
