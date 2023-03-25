@@ -176,7 +176,7 @@ impl SubsamplingRenderer {
         );
 
         let pbi = mpb.add(
-            ProgressBar::new(((image_width - 1) * (image_height - 1)) as u64)
+            ProgressBar::new(((image_width - 2) * (image_height - 2)) as u64)
                 .with_style(style.clone())
                 .with_finish(ProgressFinish::AndLeave)
                 .with_message("Interpolating"),
