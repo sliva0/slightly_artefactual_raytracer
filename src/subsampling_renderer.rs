@@ -1,8 +1,8 @@
 use image::ImageBuffer;
-use indicatif::{
-    MultiProgress, ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle,
-};
+use indicatif::{MultiProgress, ParallelProgressIterator, ProgressBar};
 use rayon::prelude::*;
+
+use crate::progress::progress_bar;
 
 use super::*;
 
@@ -160,34 +160,17 @@ impl SubsamplingRenderer {
     fn render(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
         let (image_width, image_height) = self.resolution();
-        let pixel_count = (image_width * image_height) as u64;
-        let style = ProgressStyle::with_template(
-            "{msg:14} {elapsed:>3} {wide_bar} {pos}/{len} ETA {eta:>3}",
-        )
-        .unwrap();
 
         let mpb = MultiProgress::new();
 
-        let pb1 = mpb.add(
-            ProgressBar::new(pixel_count)
-                .with_style(style.clone())
-                .with_finish(ProgressFinish::AndLeave)
-                .with_message("First pass"),
-        );
+        let pb1 = mpb.add(progress_bar(image_width * image_height, "First pass"));
 
-        let pbi = mpb.add(
-            ProgressBar::new(((image_width - 2) * (image_height - 2)) as u64)
-                .with_style(style.clone())
-                .with_finish(ProgressFinish::AndLeave)
-                .with_message("Interpolating"),
-        );
+        let pbi = mpb.add(progress_bar(
+            image_width.saturating_sub(2) * image_height.saturating_sub(2),
+            "Interpolating",
+        ));
 
-        let pb2 = mpb.add(
-            ProgressBar::new(pixel_count)
-                .with_style(style)
-                .with_finish(ProgressFinish::AndLeave)
-                .with_message("Second pass"),
-        );
+        let pb2 = mpb.add(progress_bar(image_width * image_height, "Second pass"));
 
         self.render_pixels_to_render(&mut image, pb1);
         self.interpolate_image(&mut image, pbi);
