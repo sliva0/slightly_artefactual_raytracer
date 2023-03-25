@@ -29,15 +29,13 @@ enum Pixel {
 
 impl Pixel {
     fn color(&self) -> Option<Color> {
-        if let Rendered(col) | Interpolated(col) = self {
+        if let Pixel::Rendered(col) | Pixel::Interpolated(col) = self {
             Some(*col)
         } else {
             None
         }
     }
 }
-
-use Pixel::*;
 
 pub struct SubsamplingRenderer {
     pub scene: Scene,
@@ -84,7 +82,7 @@ impl SubsamplingRenderer {
         let mut colors = vec![];
         for xi in (x - 1)..=(x + 1) {
             for yi in (y - 1)..=(y + 1) {
-                if let Rendered(color) = image[xi][yi] {
+                if let Pixel::Rendered(color) = image[xi][yi] {
                     colors.push(color);
                 }
             }
@@ -96,9 +94,9 @@ impl SubsamplingRenderer {
         let colors = Self::collect_neighbors(x, y, image);
 
         if Color::colors_diff(&colors) > self.subsampling_limit {
-            ToRender
+            Pixel::ToRender
         } else {
-            Interpolated(Color::colors_avg(colors))
+            Pixel::Interpolated(Color::colors_avg(colors))
         }
     }
 
@@ -106,7 +104,7 @@ impl SubsamplingRenderer {
         let (ys, xs) = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
-                if let ToInterpolate = image[x][y] {
+                if let Pixel::ToInterpolate = image[x][y] {
                     image[x][y] = self.interpolate_pixel(x, y, image);
                     progress_bar.inc(1);
                 }
@@ -125,9 +123,9 @@ impl SubsamplingRenderer {
             })
             .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
-                if let ToRender = pixel {
+                if let Pixel::ToRender = pixel {
                     let ray = self.create_ray(coord);
-                    *pixel = Rendered(self.scene.trace_ray(ray));
+                    *pixel = Pixel::Rendered(self.scene.trace_ray(ray));
                 }
             });
     }
