@@ -10,6 +10,8 @@ pub use camera::Camera;
 mod scene;
 pub use scene::Scene;
 
+mod progress;
+
 mod renderer;
 pub use renderer::Renderer;
 
