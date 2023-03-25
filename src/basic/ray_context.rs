@@ -1,6 +1,6 @@
 use std::{collections::HashSet, hash::Hash, sync::Arc};
 
-use super::*;
+use crate::{ObjectType, MaterialType};
 
 #[derive(Clone, Debug)]
 struct HashWrapper(ObjectType);
@@ -48,7 +48,7 @@ impl RayContext {
     fn new_from_objs(refl_limit: i32, refr_objs: ObjectTypeSet) -> Self {
         let mut refr_index = 1.0;
         for obj in refr_objs.iter() {
-            if let Refractive {
+            if let MaterialType::Refractive {
                 surface_transparency: _,
                 index,
             } = obj.0.material().m_type
