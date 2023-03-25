@@ -1,7 +1,8 @@
-use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
-
-use crossbeam_utils::thread;
 use image::ImageBuffer;
+use indicatif::{
+    MultiProgress, ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle,
+};
+use rayon::prelude::*;
 
 use super::*;
 
@@ -11,10 +12,10 @@ type Image = Vec<Vec<Pixel>>;
 pub fn subsampling_func(subsample_number: i32) -> SubsamplingFunc {
     Box::new(match subsample_number {
         1 => |_| true,
-        2 => |(x, y)| (x + y) % 2 == 0,
-        3 => |(x, y)| (x + y) % 3 == 0,
-        4 => |(x, y)| (x + y * 2) % 4 == 0,
-        5 => |(x, y)| (x + y * 2) % 5 == 0,
+        2 => |[x, y]| (x + y) % 2 == 0,
+        3 => |[x, y]| (x + y) % 3 == 0,
+        4 => |[x, y]| (x + y * 2) % 4 == 0,
+        5 => |[x, y]| (x + y * 2) % 5 == 0,
         _ => panic!("incorrect subsample number"),
     })
 }
@@ -61,36 +62,21 @@ impl SubsamplingRenderer {
     }
 
     fn is_edge(&self, pixel: Coord) -> bool {
-        let (x, y) = pixel;
+        let [x, y] = pixel;
         let (xs, ys) = self.resolution();
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
     }
 
     fn create_ray(&self, pixel: Coord) -> Ray {
-        let (x, y) = (pixel.0 as f64, pixel.1 as f64);
+        let [x, y] = pixel;
+        let [x, y] = [x as f64, y as f64];
         let (xs, ys) = self.f64_resolution();
 
         let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
-        let z = -(ys as f64) / (self.fov.to_radians() / 2.0).tan();
+        let z = -ys / (self.fov.to_radians() / 2.0).tan();
 
         let dir = self.cam.rotate_ray(Vector::new(x, y, z)).normalize();
         Ray::new(self.cam.pos, dir)
-    }
-
-    fn render_line(&self, line_num: usize, line: &mut [Pixel], tx: SyncSender<()>) {
-        let mut pixel_cnt = 0;
-
-        for (i, pixel) in line.iter_mut().enumerate() {
-            if let ToRender = pixel {
-                let ray = self.create_ray((i, line_num));
-                *pixel = Rendered(self.scene.trace_ray(ray));
-            }
-
-            pixel_cnt += 1;
-            if pixel_cnt % PORTIONS_SIZE == 0 {
-                tx.send(()).unwrap()
-            }
-        }
     }
 
     #[allow(clippy::needless_range_loop)]
@@ -116,39 +102,34 @@ impl SubsamplingRenderer {
         }
     }
 
-    fn interpolate_image(&self, image: &mut Image) {
+    fn interpolate_image(&self, image: &mut Image, progress_bar: ProgressBar) {
         let (ys, xs) = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
                 if let ToInterpolate = image[x][y] {
-                    image[x][y] = self.interpolate_pixel(x, y, image)
+                    image[x][y] = self.interpolate_pixel(x, y, image);
+                    progress_bar.inc(1);
                 }
             }
         }
     }
 
-    fn progress_bar(&self, rx: Receiver<()>) {
-        println!("starting render");
-        let (columns, lines) = self.resolution();
-        let portion_amount = columns / PORTIONS_SIZE * lines;
-        for i in 1..=portion_amount {
-            rx.recv().unwrap();
-            println!("{} / {}", i, portion_amount);
-        }
-        println!("\ndone");
-    }
-
-    fn render_pixels_to_render(&self, image: &mut Image) {
-        thread::scope(|scope| {
-            let (tx, rx) = sync_channel(8);
-            scope.spawn(move |_| self.progress_bar(rx));
-
-            for (line_num, line) in image.iter_mut().enumerate() {
-                let txc = tx.clone();
-                scope.spawn(move |_| self.render_line(line_num, line, txc));
-            }
-        })
-        .unwrap();
+    fn render_pixels_to_render(&self, image: &mut Image, progress_bar: ProgressBar) {
+        image
+            .par_iter_mut()
+            .enumerate()
+            .flat_map(|(line_num, line)| {
+                line.par_iter_mut()
+                    .enumerate()
+                    .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
+            })
+            .progress_with(progress_bar)
+            .for_each(|(coord, pixel)| {
+                if let ToRender = pixel {
+                    let ray = self.create_ray(coord);
+                    *pixel = Rendered(self.scene.trace_ray(ray));
+                }
+            });
     }
 
     fn create_image_template(&self, func: SubsamplingFunc) -> Image {
@@ -162,7 +143,7 @@ impl SubsamplingRenderer {
             let mut column_num = 0;
 
             line.resize_with(columns, || {
-                let pixel = (column_num, line_num);
+                let pixel = [column_num, line_num];
                 column_num += 1;
                 if self.is_edge(pixel) || func(pixel) {
                     Pixel::ToRender
@@ -178,9 +159,39 @@ impl SubsamplingRenderer {
 
     fn render(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
-        self.render_pixels_to_render(&mut image);
-        self.interpolate_image(&mut image);
-        self.render_pixels_to_render(&mut image);
+        let (image_width, image_height) = self.resolution();
+        let pixel_count = (image_width * image_height) as u64;
+        let style = ProgressStyle::with_template(
+            "{msg:14} {elapsed:>3} {wide_bar} {pos}/{len} ETA {eta:>3}",
+        )
+        .unwrap();
+
+        let mpb = MultiProgress::new();
+
+        let pb1 = mpb.add(
+            ProgressBar::new(pixel_count)
+                .with_style(style.clone())
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("First pass"),
+        );
+
+        let pbi = mpb.add(
+            ProgressBar::new(((image_width - 2) * (image_height - 2)) as u64)
+                .with_style(style.clone())
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("Interpolating"),
+        );
+
+        let pb2 = mpb.add(
+            ProgressBar::new(pixel_count)
+                .with_style(style)
+                .with_finish(ProgressFinish::AndLeave)
+                .with_message("Second pass"),
+        );
+
+        self.render_pixels_to_render(&mut image, pb1);
+        self.interpolate_image(&mut image, pbi);
+        self.render_pixels_to_render(&mut image, pb2);
 
         image
     }
