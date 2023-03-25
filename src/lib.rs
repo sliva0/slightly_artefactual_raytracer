@@ -10,13 +10,8 @@ pub use camera::Camera;
 mod scene;
 pub use scene::Scene;
 
-mod progress;
-
-mod renderer;
-pub use renderer::Renderer;
-
-mod subsampling_renderer;
-pub use subsampling_renderer::{subsampling_func, SubsamplingRenderer};
+mod renderers;
+pub use renderers::*;
 
 pub type Coord = [usize; 2];
 

@@ -2,9 +2,9 @@ use image::ImageBuffer;
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 
-use crate::progress::progress_bar;
+use super::progress::progress_bar;
 
-use super::*;
+use crate::*;
 
 pub struct Renderer {
     pub scene: Scene,

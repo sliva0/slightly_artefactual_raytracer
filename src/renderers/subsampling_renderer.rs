@@ -2,9 +2,9 @@ use image::ImageBuffer;
 use indicatif::{MultiProgress, ParallelProgressIterator, ProgressBar};
 use rayon::prelude::*;
 
-use crate::progress::progress_bar;
+use super::progress::progress_bar;
 
-use super::*;
+use crate::*;
 
 type SubsamplingFunc = Box<dyn Fn(Coord) -> bool>;
 type Image = Vec<Vec<Pixel>>;
