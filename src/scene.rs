@@ -237,12 +237,12 @@ impl Scene {
             return color;
         }
         match hit.material().m_type {
-            Common => color,
-            Reflective { reflectance } => {
+            MaterialType::Common => color,
+            MaterialType::Reflective { reflectance } => {
                 let refl_color = self.compute_reflected_case(ray, &hit, &context);
                 color * (1.0 - reflectance) + refl_color * reflectance
             }
-            Refractive {
+            MaterialType::Refractive {
                 surface_transparency,
                 index: _,
             } => {

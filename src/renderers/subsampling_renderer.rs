@@ -2,8 +2,7 @@ use image::ImageBuffer;
 use indicatif::{MultiProgress, ParallelProgressIterator, ProgressBar};
 use rayon::prelude::*;
 
-use super::progress::progress_bar;
-
+use super::{progress_bar, Coord};
 use crate::*;
 
 type SubsamplingFunc = Box<dyn Fn(Coord) -> bool>;

@@ -3,6 +3,7 @@ use std::{fmt::Debug, sync::Arc};
 use iter_fixed::IntoIteratorFixed;
 
 use super::*;
+use crate::Scene;
 
 pub trait Upcast: Sync + Send {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>

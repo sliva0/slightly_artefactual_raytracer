@@ -1,6 +1,7 @@
 use std::{collections::HashSet, hash::Hash, sync::Arc};
 
-use crate::{ObjectType, MaterialType};
+use super::MaterialType;
+use crate::objects::ObjectType;
 
 #[derive(Clone, Debug)]
 struct HashWrapper(ObjectType);

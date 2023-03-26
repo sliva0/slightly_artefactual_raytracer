@@ -1,4 +1,4 @@
-use super::*;
+use super::{Point, Vector};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Ray {

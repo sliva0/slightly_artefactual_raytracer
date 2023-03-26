@@ -2,8 +2,7 @@ use image::ImageBuffer;
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 
-use super::progress::progress_bar;
-
+use super::{progress_bar, Coord};
 use crate::*;
 
 pub struct Renderer {

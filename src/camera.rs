@@ -6,6 +6,7 @@ pub struct Camera {
     pub pos: Point,
     operator: Matrix,
 }
+
 impl Camera {
     pub fn rotate_ray(&self, ray: Vector) -> Vector {
         self.operator * ray
