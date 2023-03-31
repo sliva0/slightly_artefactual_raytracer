@@ -13,8 +13,8 @@ fn map_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
 
 pub fn basis_pairs() -> Vec<(Vector, Vector)> {
     [
-        map_pairs(BASIS, |x, y| (x, y)),
-        map_pairs(BASIS, |x, y| (-x, -y)),
+        map_pairs(BASIS, |a, b| (a, b)),
+        map_pairs(BASIS, |a, b| (-a, -b)),
     ]
     .concat()
 }

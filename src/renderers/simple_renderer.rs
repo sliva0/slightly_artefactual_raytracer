@@ -11,18 +11,18 @@ pub struct SimpleRenderer {
 
 impl SimpleRenderer {
     fn render_raw(&self) -> Vec<Vec<Color>> {
-        let [x, y] = self.scene.resolution;
-        let mut result = vec![vec![Color::ERR_COLOR; x]; y];
+        let [width, height] = self.scene.resolution;
+        let mut result = vec![vec![Color::ERR_COLOR; width]; height];
 
         result
             .par_iter_mut()
             .enumerate()
-            .flat_map(|(line_num, line)| {
+            .flat_map(|(yi, line)| {
                 line.par_iter_mut()
                     .enumerate()
-                    .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
+                    .map(move |(xi, pixel)| ([xi, yi], pixel))
             })
-            .progress_with(progress_bar(x * y, "Rendering"))
+            .progress_with(progress_bar(width * height, "Rendering"))
             .for_each(|(coord, pixel)| {
                 *pixel = self.scene.objs.trace_ray(self.scene.ray(coord));
             });
@@ -32,10 +32,10 @@ impl SimpleRenderer {
 
     pub fn render(&self) -> ImageBuffer<RawColor, Vec<u8>> {
         let image = self.render_raw();
-        let [x, y] = self.scene.resolution;
+        let [width, height] = self.scene.resolution;
 
-        ImageBuffer::from_fn(x as u32, y as u32, |x, y| {
-            image[y as usize][x as usize].into()
+        ImageBuffer::from_fn(width as u32, height as u32, |xi, yi| {
+            image[yi as usize][xi as usize].into()
         })
     }
 }

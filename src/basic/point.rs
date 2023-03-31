@@ -72,9 +72,9 @@ impl Vector {
     }
 
     pub fn cross(&self, rhs: Self) -> Self {
-        let [x1, y1, z1] = self.0;
-        let [x2, y2, z2] = rhs.0;
-        Self([y1 * z2 - z1 * y2, z1 * x2 - x1 * z2, x1 * y2 - y1 * x2])
+        let [xa, ya, za] = self.0;
+        let [xb, yb, zb] = rhs.0;
+        Self([ya * zb - za * yb, za * xb - xa * zb, xa * yb - ya * xb])
     }
 
     pub fn reflect(self, normal: Self) -> Self {

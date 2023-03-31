@@ -22,10 +22,10 @@ impl Scene {
 
     pub fn ray_with_resolution(&self, pixel: Coord, resolution: Coord) -> Ray {
         let [x, y] = coord_to_f64(pixel);
-        let [xs, ys] = coord_to_f64(resolution);
+        let [width, height] = coord_to_f64(resolution);
 
-        let [x, y] = [x - xs / 2.0, ys / 2.0 - y];
-        let z = -ys / (self.fov.to_radians() / 2.0).tan();
+        let [x, y] = [x - width / 2.0, height / 2.0 - y];
+        let z = -height / (self.fov.to_radians() / 2.0).tan();
 
         let dir = self.cam.rotate_ray(Vector::new(x, y, z)).normalize();
         Ray::new(self.cam.pos, dir)

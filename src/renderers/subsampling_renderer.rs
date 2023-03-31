@@ -53,16 +53,16 @@ impl SubsamplingRenderer {
 
     fn is_edge(&self, pixel: Coord) -> bool {
         let [x, y] = pixel;
-        let [xs, ys] = self.resolution();
-        x == 0 || y == 0 || x == xs - 1 || y == ys - 1
+        let [width, height] = self.resolution();
+        x == 0 || y == 0 || x == width - 1 || y == height - 1
     }
 
     #[allow(clippy::needless_range_loop)]
-    fn collect_neighbors(x: usize, y: usize, image: &Image) -> Vec<Color> {
+    fn collect_neighbors(image: &Image, x: usize, y: usize) -> Vec<Color> {
         let mut colors = vec![];
         for xi in (x - 1)..=(x + 1) {
             for yi in (y - 1)..=(y + 1) {
-                if let Pixel::Rendered(color) = image[xi][yi] {
+                if let Pixel::Rendered(color) = image[yi][xi] {
                     colors.push(color);
                 }
             }
@@ -70,8 +70,8 @@ impl SubsamplingRenderer {
         colors
     }
 
-    fn interpolate_pixel(&self, x: usize, y: usize, image: &mut Image) -> Pixel {
-        let colors = Self::collect_neighbors(x, y, image);
+    fn interpolate_pixel(&self, image: &mut Image, x: usize, y: usize) -> Pixel {
+        let colors = Self::collect_neighbors(image, x, y);
 
         if Color::colors_diff(&colors) > self.subsampling_limit {
             Pixel::ToRender
@@ -81,13 +81,14 @@ impl SubsamplingRenderer {
     }
 
     fn interpolate_image(&self, image: &mut Image, progress_bar: ProgressBar) {
-        let [ys, xs] = self.resolution();
-        for y in 1..ys - 1 {
-            for x in 1..xs - 1 {
-                if let Pixel::ToInterpolate = image[x][y] {
-                    image[x][y] = self.interpolate_pixel(x, y, image);
-                    progress_bar.inc(1);
+        let [width, height] = self.resolution();
+
+        for xi in 0..width {
+            for yi in 0..height {
+                if let Pixel::ToInterpolate = image[yi][xi] {
+                    image[yi][xi] = self.interpolate_pixel(image, xi, yi);
                 }
+                progress_bar.inc(1);
             }
         }
     }
@@ -96,10 +97,10 @@ impl SubsamplingRenderer {
         image
             .par_iter_mut()
             .enumerate()
-            .flat_map(|(line_num, line)| {
+            .flat_map(|(yi, line)| {
                 line.par_iter_mut()
                     .enumerate()
-                    .map(move |(column_num, pixel)| ([column_num, line_num], pixel))
+                    .map(move |(xi, pixel)| ([xi, yi], pixel))
             })
             .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
@@ -111,13 +112,13 @@ impl SubsamplingRenderer {
     }
 
     fn create_image_template(&self, subsampling_func: SubsamplingFunc) -> Image {
-        let [columns, lines] = self.resolution();
+        let [width, height] = self.resolution();
 
-        (0..lines)
-            .map(|line_num| {
-                (0..columns)
-                    .map(|column_num| {
-                        let pixel = [column_num, line_num];
+        (0..height)
+            .map(|yi| {
+                (0..width)
+                    .map(|xi| {
+                        let pixel = [xi, yi];
                         if self.is_edge(pixel) || subsampling_func(pixel) {
                             Pixel::ToRender
                         } else {
@@ -131,18 +132,14 @@ impl SubsamplingRenderer {
 
     fn render_raw(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
-        let [image_width, image_height] = self.resolution();
+        let [width, height] = self.resolution();
+        let pixel_count = width * height;
 
         let mpb = MultiProgress::new();
 
-        let pb1 = mpb.add(progress_bar(image_width * image_height, "First pass"));
-
-        let pbi = mpb.add(progress_bar(
-            image_width.saturating_sub(2) * image_height.saturating_sub(2),
-            "Interpolating",
-        ));
-
-        let pb2 = mpb.add(progress_bar(image_width * image_height, "Second pass"));
+        let pb1 = mpb.add(progress_bar(pixel_count, "First pass"));
+        let pbi = mpb.add(progress_bar(pixel_count, "Interpolating"));
+        let pb2 = mpb.add(progress_bar(pixel_count, "Second pass"));
 
         self.render_pixels_to_render(&mut image, pb1);
         self.interpolate_image(&mut image, pbi);
@@ -158,15 +155,15 @@ impl SubsamplingRenderer {
     }
 
     pub fn render(&self, func: SubsamplingFunc) -> ImageBuffer<RawColor, Vec<u8>> {
-        let [x, y] = self.scene.resolution;
+        let [width, height] = self.scene.resolution;
 
         let image = self.render_raw(func);
         let mp = self.supersampling_multiplier as u32;
 
-        ImageBuffer::from_fn(x as u32, y as u32, |x, y| {
+        ImageBuffer::from_fn(width as u32, height as u32, |xi, yi| {
             let mut colors = Vec::with_capacity((mp * mp) as usize);
-            for xi in (x * mp)..((x + 1) * mp) {
-                for yi in (y * mp)..((y + 1) * mp) {
+            for xi in (xi * mp)..((xi + 1) * mp) {
+                for yi in (yi * mp)..((yi + 1) * mp) {
                     colors.push(Self::pixel_color(&image, xi, yi));
                 }
             }
