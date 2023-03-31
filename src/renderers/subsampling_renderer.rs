@@ -1,8 +1,9 @@
 use image::ImageBuffer;
 use indicatif::{MultiProgress, ParallelProgressIterator, ProgressBar};
+use iter_fixed::IntoIteratorFixed;
 use rayon::prelude::*;
 
-use super::{progress_bar, Coord};
+use super::{progress_bar, Coord, Scene};
 use crate::*;
 
 type SubsamplingFunc = Box<dyn Fn(Coord) -> bool>;
@@ -15,7 +16,7 @@ pub fn subsampling_func(subsample_number: i32) -> SubsamplingFunc {
         3 => |[x, y]| (x + y) % 3 == 0,
         4 => |[x, y]| (x + y * 2) % 4 == 0,
         5 => |[x, y]| (x + y * 2) % 5 == 0,
-        _ => panic!("incorrect subsample number"),
+        x => panic!("Unknown subsampling function for {x}"),
     })
 }
 
@@ -28,52 +29,32 @@ enum Pixel {
 
 impl Pixel {
     fn color(&self) -> Option<Color> {
-        if let Pixel::Rendered(col) | Pixel::Interpolated(col) = self {
-            Some(*col)
-        } else {
-            None
+        match self {
+            Pixel::Rendered(color) | Pixel::Interpolated(color) => Some(*color),
+            _ => None,
         }
     }
 }
 
 pub struct SubsamplingRenderer {
     pub scene: Scene,
-    pub cam: Camera,
-    pub fov: f64,
-    pub resolution: (usize, usize),
     pub subsampling_limit: f64,
     pub supersampling_multiplier: usize,
 }
 
 impl SubsamplingRenderer {
-    fn resolution(&self) -> (usize, usize) {
-        (
-            (self.resolution.0 * self.supersampling_multiplier),
-            (self.resolution.1 * self.supersampling_multiplier),
-        )
-    }
-
-    fn f64_resolution(&self) -> (f64, f64) {
-        let (x, y) = self.resolution();
-        (x as f64, y as f64)
+    fn resolution(&self) -> [usize; 2] {
+        self.scene
+            .resolution
+            .into_iter_fixed()
+            .map(|x| x * self.supersampling_multiplier)
+            .collect()
     }
 
     fn is_edge(&self, pixel: Coord) -> bool {
         let [x, y] = pixel;
-        let (xs, ys) = self.resolution();
+        let [xs, ys] = self.resolution();
         x == 0 || y == 0 || x == xs - 1 || y == ys - 1
-    }
-
-    fn create_ray(&self, pixel: Coord) -> Ray {
-        let [x, y] = pixel;
-        let [x, y] = [x as f64, y as f64];
-        let (xs, ys) = self.f64_resolution();
-
-        let (x, y) = ((x - xs / 2.0), -(y - ys / 2.0));
-        let z = -ys / (self.fov.to_radians() / 2.0).tan();
-
-        let dir = self.cam.rotate_ray(Vector::new(x, y, z)).normalize();
-        Ray::new(self.cam.pos, dir)
     }
 
     #[allow(clippy::needless_range_loop)]
@@ -100,7 +81,7 @@ impl SubsamplingRenderer {
     }
 
     fn interpolate_image(&self, image: &mut Image, progress_bar: ProgressBar) {
-        let (ys, xs) = self.resolution();
+        let [ys, xs] = self.resolution();
         for y in 1..ys - 1 {
             for x in 1..xs - 1 {
                 if let Pixel::ToInterpolate = image[x][y] {
@@ -123,40 +104,34 @@ impl SubsamplingRenderer {
             .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
                 if let Pixel::ToRender = pixel {
-                    let ray = self.create_ray(coord);
-                    *pixel = Pixel::Rendered(self.scene.trace_ray(ray));
+                    let ray = self.scene.ray_with_resolution(coord, self.resolution());
+                    *pixel = Pixel::Rendered(self.scene.objs.trace_ray(ray));
                 }
             });
     }
 
-    fn create_image_template(&self, func: SubsamplingFunc) -> Image {
-        let (columns, lines) = self.resolution();
+    fn create_image_template(&self, subsampling_func: SubsamplingFunc) -> Image {
+        let [columns, lines] = self.resolution();
 
-        let mut image = Vec::with_capacity(lines);
-        let mut line_num = 0;
-
-        image.resize_with(lines, || {
-            let mut line = Vec::with_capacity(columns);
-            let mut column_num = 0;
-
-            line.resize_with(columns, || {
-                let pixel = [column_num, line_num];
-                column_num += 1;
-                if self.is_edge(pixel) || func(pixel) {
-                    Pixel::ToRender
-                } else {
-                    Pixel::ToInterpolate
-                }
-            });
-            line_num += 1;
-            line
-        });
-        image
+        (0..lines)
+            .map(|line_num| {
+                (0..columns)
+                    .map(|column_num| {
+                        let pixel = [column_num, line_num];
+                        if self.is_edge(pixel) || subsampling_func(pixel) {
+                            Pixel::ToRender
+                        } else {
+                            Pixel::ToInterpolate
+                        }
+                    })
+                    .collect()
+            })
+            .collect()
     }
 
-    fn render(&self, func: SubsamplingFunc) -> Image {
+    fn render_raw(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
-        let (image_width, image_height) = self.resolution();
+        let [image_width, image_height] = self.resolution();
 
         let mpb = MultiProgress::new();
 
@@ -176,28 +151,26 @@ impl SubsamplingRenderer {
         image
     }
 
-    fn pixel_color(x: u32, y: u32, image: &Image) -> Color {
+    fn pixel_color(image: &Image, x: u32, y: u32) -> Color {
         image[y as usize][x as usize]
             .color()
             .expect("Some pixels somehow didn't render")
     }
 
-    pub fn render_and_save(&self, path: &str, func: SubsamplingFunc) {
-        let (x, y) = self.resolution;
+    pub fn render(&self, func: SubsamplingFunc) -> ImageBuffer<RawColor, Vec<u8>> {
+        let [x, y] = self.scene.resolution;
 
-        let image = self.render(func);
+        let image = self.render_raw(func);
         let mp = self.supersampling_multiplier as u32;
 
         ImageBuffer::from_fn(x as u32, y as u32, |x, y| {
             let mut colors = Vec::with_capacity((mp * mp) as usize);
             for xi in (x * mp)..((x + 1) * mp) {
                 for yi in (y * mp)..((y + 1) * mp) {
-                    colors.push(Self::pixel_color(xi, yi, &image));
+                    colors.push(Self::pixel_color(&image, xi, yi));
                 }
             }
-            Color::colors_avg(colors).raw()
+            Color::colors_avg(colors).into_raw()
         })
-        .save(path)
-        .unwrap();
     }
 }

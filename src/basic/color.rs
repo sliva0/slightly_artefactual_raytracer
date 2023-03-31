@@ -44,7 +44,7 @@ impl Color {
         [r, g, b].into_iter_fixed().map(Self::convert_value).into()
     }
 
-    pub fn raw(self) -> RawColor {
+    pub fn into_raw(self) -> RawColor {
         self.into()
     }
 

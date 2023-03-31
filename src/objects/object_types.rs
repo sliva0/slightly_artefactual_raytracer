@@ -3,7 +3,7 @@ use std::{fmt::Debug, sync::Arc};
 use iter_fixed::IntoIteratorFixed;
 
 use super::*;
-use crate::Scene;
+use crate::SceneObjects;
 
 pub trait Upcast: Sync + Send {
     fn upcast<'a>(self: Arc<Self>) -> Arc<dyn Object + 'a>
@@ -73,10 +73,10 @@ pub trait LightSource: Sync + Send {
 
     fn build_schematic_objects(self: Arc<Self>) -> Vec<TracingObjectType>;
 
-    fn light_dir(&self, scene: &Scene, pos: Point) -> Option<Vector> {
+    fn light_dir(&self, scene_objs: &SceneObjects, pos: Point) -> Option<Vector> {
         let dir = self._light_dir(pos);
         let dist = self.dist(pos);
-        if scene.compute_shadow_ray(Ray::new(pos, -dir), dist) {
+        if scene_objs.compute_shadow_ray(Ray::new(pos, -dir), dist) {
             None
         } else {
             Some(dir)

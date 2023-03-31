@@ -64,46 +64,46 @@ impl Hit {
     }
 }
 
-pub struct Scene {
-    marching_objs: Vec<MarchingObjectType>,
-    tracing_objs: Vec<TracingObjectType>,
-    meta_objs: Vec<MetaTracingObjectType>,
+pub struct SceneObjects {
+    marching: Vec<MarchingObjectType>,
+    tracing: Vec<TracingObjectType>,
+    meta: Vec<MetaTracingObjectType>,
     lamps: Vec<LightSourceType>,
     reflection_limit: i32,
 }
 
-impl Scene {
+impl SceneObjects {
     fn build_meta_objects(&mut self) {
-        for object in self.meta_objs.iter().cloned() {
-            self.tracing_objs.extend(object.build_objects());
+        for object in self.meta.iter().cloned() {
+            self.tracing.extend(object.build_objects());
         }
         for lamp in self.lamps.iter().cloned() {
-            self.tracing_objs.extend(lamp.build_schematic_objects());
+            self.tracing.extend(lamp.build_schematic_objects());
         }
     }
 
     pub fn new(
-        marching_objs: Vec<MarchingObjectType>,
-        tracing_objs: Vec<TracingObjectType>,
-        meta_objs: Vec<MetaTracingObjectType>,
+        marching: Vec<MarchingObjectType>,
+        tracing: Vec<TracingObjectType>,
+        meta: Vec<MetaTracingObjectType>,
         lamps: Vec<LightSourceType>,
         reflection_limit: i32,
     ) -> Self {
-        let mut scene = Self {
-            marching_objs,
-            tracing_objs,
-            meta_objs,
+        let mut scene_objs = Self {
+            marching,
+            tracing,
+            meta,
             lamps,
             reflection_limit,
         };
-        scene.build_meta_objects();
-        scene
+        scene_objs.build_meta_objects();
+        scene_objs
     }
 
     fn sdf<const S: bool>(&self, pos: Point) -> SdfResult {
         let mut sdf = f64::INFINITY;
 
-        for object in self.marching_objs.iter() {
+        for object in self.marching.iter() {
             if !S && object.is_schematic() {
                 continue;
             }
@@ -134,7 +134,7 @@ impl Scene {
         let mut distance = f64::INFINITY;
         let mut hit = None;
 
-        for obj in self.tracing_objs.iter() {
+        for obj in self.tracing.iter() {
             if let Some(dist) = obj.find_intersection(ray) {
                 if dist < distance && dist > EPSILON {
                     hit = Hit::new_tracing(obj, dist, ray);
@@ -150,7 +150,7 @@ impl Scene {
     }
 
     fn cast_shadow_ray(&self, ray: Ray, max_depth: f64) -> bool {
-        for obj in self.tracing_objs.iter() {
+        for obj in self.tracing.iter() {
             if obj.is_schematic() {
                 continue;
             }
