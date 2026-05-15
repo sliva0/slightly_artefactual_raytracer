@@ -1,8 +1,7 @@
 use image::ImageBuffer;
-use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 
-use super::{progress_bar, Scene};
+use super::Scene;
 use crate::*;
 
 pub struct SimpleRenderer {
@@ -22,7 +21,6 @@ impl SimpleRenderer {
                     .enumerate()
                     .map(move |(xi, pixel)| ([xi, yi], pixel))
             })
-            .progress_with(progress_bar(width * height, "Rendering"))
             .for_each(|(coord, pixel)| {
                 *pixel = self.scene.objs.trace_ray(self.scene.ray(coord));
             });

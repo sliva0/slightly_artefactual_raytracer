@@ -1,5 +1,4 @@
 mod progress_bar;
-use progress_bar::progress_bar;
 
 mod scene;
 use scene::Coord;

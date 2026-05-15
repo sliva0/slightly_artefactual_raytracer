@@ -1,5 +1,4 @@
 use image::ImageBuffer;
-use indicatif::{MultiProgress, ParallelProgressIterator, ProgressBar};
 use iter_fixed::IntoIteratorFixed;
 use rayon::prelude::*;
 
@@ -80,7 +79,7 @@ impl SubsamplingRenderer {
         }
     }
 
-    fn interpolate_image(&self, image: &mut Image, progress_bar: ProgressBar) {
+    fn interpolate_image(&self, image: &mut Image) {
         let [width, height] = self.resolution();
 
         for xi in 0..width {
@@ -88,12 +87,11 @@ impl SubsamplingRenderer {
                 if let Pixel::ToInterpolate = image[yi][xi] {
                     image[yi][xi] = self.interpolate_pixel(image, xi, yi);
                 }
-                progress_bar.inc(1);
             }
         }
     }
 
-    fn render_pixels_to_render(&self, image: &mut Image, progress_bar: ProgressBar) {
+    fn render_pixels_to_render(&self, image: &mut Image) {
         image
             .par_iter_mut()
             .enumerate()
@@ -102,7 +100,6 @@ impl SubsamplingRenderer {
                     .enumerate()
                     .map(move |(xi, pixel)| ([xi, yi], pixel))
             })
-            .progress_with(progress_bar)
             .for_each(|(coord, pixel)| {
                 if let Pixel::ToRender = pixel {
                     let ray = self.scene.ray_with_resolution(coord, self.resolution());
@@ -133,18 +130,9 @@ impl SubsamplingRenderer {
     fn render_raw(&self, func: SubsamplingFunc) -> Image {
         let mut image = self.create_image_template(func);
         let [width, height] = self.resolution();
-        let pixel_count = width * height;
-
-        let mpb = MultiProgress::new();
-
-        let pb1 = mpb.add(progress_bar(pixel_count, "First pass"));
-        let pbi = mpb.add(progress_bar(pixel_count, "Interpolating"));
-        let pb2 = mpb.add(progress_bar(pixel_count, "Second pass"));
-
-        self.render_pixels_to_render(&mut image, pb1);
-        self.interpolate_image(&mut image, pbi);
-        self.render_pixels_to_render(&mut image, pb2);
-
+        self.render_pixels_to_render(&mut image);
+        self.interpolate_image(&mut image);
+        self.render_pixels_to_render(&mut image);
         image
     }
 
