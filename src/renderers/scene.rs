@@ -4,7 +4,7 @@ use crate::*;
 
 pub type Coord = [usize; 2];
 
-fn coord_to_f64(coord: Coord) -> [f64; 2] {
+fn into_f64_array(coord: Coord) -> [f64; 2] {
     coord.into_iter_fixed().map(|x| x as f64).collect()
 }
 
@@ -21,8 +21,8 @@ impl Scene {
     }
 
     pub fn ray_with_resolution(&self, pixel: Coord, resolution: Coord) -> Ray {
-        let [x, y] = coord_to_f64(pixel);
-        let [width, height] = coord_to_f64(resolution);
+        let [x, y] = into_f64_array(pixel);
+        let [width, height] = into_f64_array(resolution);
 
         let [x, y] = [x - width / 2.0, height / 2.0 - y];
         let z = -height / (self.fov.to_radians() / 2.0).tan();

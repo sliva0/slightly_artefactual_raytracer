@@ -6,6 +6,9 @@ pub use object_types::*;
 mod polygons;
 use polygons::ObjectPolygon;
 
+mod scene_objects;
+pub use scene_objects::SceneObjects;
+
 mod cuboid;
 mod dummy_object;
 mod lamp;

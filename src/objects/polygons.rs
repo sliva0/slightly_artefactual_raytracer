@@ -13,17 +13,17 @@ fn map_pairs<T: Copy, O, F: Fn(T, T) -> O>(p: [T; 3], f: F) -> [O; 3] {
 
 pub fn basis_pairs() -> Vec<(Vector, Vector)> {
     [
-        map_pairs(BASIS, |a, b| (a, b)),
-        map_pairs(BASIS, |a, b| (-a, -b)),
+        map_pairs(Vector::BASIS, |a, b| (a, b)),
+        map_pairs(Vector::BASIS, |a, b| (-a, -b)),
     ]
     .concat()
 }
 
 #[derive(Debug)]
 pub struct Plane {
-    ///plane normal
+    ///plane normal, normalized `[a, b, c]` from plane equation (ax + by + cz + d = 0)
     normal: Vector,
-    ///d from plane equation (ax + by + cz + d = 0), plane shift
+    /// plane shift, `d` from plane equation
     shift: f64,
 }
 impl Plane {

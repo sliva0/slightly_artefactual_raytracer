@@ -1,5 +1,7 @@
+mod primitive;
+
 mod point;
-pub use point::{Point, Vector, BASIS, ORIGIN};
+pub use point::{Point, Vector};
 
 mod color;
 pub use color::{Color, RawColor};

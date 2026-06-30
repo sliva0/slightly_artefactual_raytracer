@@ -63,7 +63,7 @@ impl MetaTracingObject for Room {
             let dir = dir * size;
             objects.extend(ObjectPolygon::collect_cuboid_face(
                 &self,
-                ORIGIN,
+                Point::ORIGIN,
                 dir,
                 (side * size, (dir ^ side)),
             ));

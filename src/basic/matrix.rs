@@ -1,6 +1,6 @@
 use std::ops::Mul;
 
-use super::{Vector, BASIS};
+use super::Vector;
 
 #[derive(Copy, Clone)]
 pub struct Matrix {
@@ -48,7 +48,7 @@ impl Mul<Vector> for Matrix {
 impl Mul for Matrix {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self {
-        let [cx, cy, cz] = BASIS;
+        let [cx, cy, cz] = Vector::BASIS;
         let (cx, cy, cz) = (rhs * cx, rhs * cy, rhs * cz);
 
         Self::new(

@@ -1,38 +1,19 @@
-use std::{
-    array::IntoIter,
-    ops::{Add, BitXor, Div, Mul, Neg, Shr, Sub},
-    slice::Iter,
-};
+use std::ops::{Add, BitXor, Div, Mul, Neg, Shr, Sub};
 
-use iter_fixed::{IntoIteratorFixed, IteratorFixed};
+use derive_more::{Deref, DerefMut, From, Into};
+use iter_fixed::IntoIteratorFixed;
 
-#[derive(Debug, Copy, Clone)]
+use super::primitive::*;
+
+#[derive(Debug, Copy, Clone, From, Into, Deref, DerefMut)]
 pub struct Point([f64; 3]);
 pub type Vector = Point;
 
-pub const ORIGIN: Point = Point::new(0.0, 0.0, 0.0);
-
-pub const BASIS: [Vector; 3] = [
-    Vector::new(1.0, 0.0, 0.0),
-    Vector::new(0.0, 1.0, 0.0),
-    Vector::new(0.0, 0.0, 1.0),
-];
-
 impl Point {
-    fn fixed_iter(&self) -> IteratorFixed<IntoIter<f64, 3>, 3> {
-        self.0.into_iter_fixed()
-    }
+    pub const ORIGIN: Point = Point([0.0, 0.0, 0.0]);
 
-    fn map_binary_op<F: Fn(f64, f64) -> f64>(&self, rhs: Self, f: F) -> Self {
-        self.fixed_iter().zip(rhs.0).map(|(a, b)| f(a, b)).into()
-    }
-
-    fn map_with_number<F: Fn(f64, f64) -> f64>(&self, rhs: f64, f: F) -> Self {
-        self.fixed_iter().map(|a| f(a, rhs)).into()
-    }
-
-    pub const fn new(x: f64, y: f64, z: f64) -> Self {
-        Self([x, y, z])
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        [x, y, z].into()
     }
 
     pub fn dist(self, rhs: Self) -> f64 {
@@ -40,20 +21,18 @@ impl Point {
     }
 
     ///pairwise coordinate multiplication
-    pub fn pmul(&self, rhs: Self) -> Self {
+    pub fn pairwise_mul(&self, rhs: Self) -> Self {
         self.map_binary_op(rhs, f64::mul)
-    }
-
-    pub fn iter(&self) -> Iter<'_, f64> {
-        self.0.iter()
-    }
-
-    pub fn sum(&self) -> f64 {
-        self.iter().sum()
     }
 }
 
 impl Vector {
+    pub const BASIS: [Vector; 3] = [
+        Point([1.0, 0.0, 0.0]),
+        Point([0.0, 1.0, 0.0]),
+        Point([0.0, 0.0, 1.0]),
+    ];
+
     pub fn abs(self) -> f64 {
         (self * self).sqrt()
     }
@@ -63,17 +42,17 @@ impl Vector {
         if abs.is_normal() {
             self / abs
         } else {
-            ORIGIN
+            Self::ORIGIN
         }
     }
 
-    pub fn dot(&self, rhs: Self) -> f64 {
-        self.pmul(rhs).sum()
+    pub fn dot_mul(&self, rhs: Self) -> f64 {
+        self.pairwise_mul(rhs).iter().sum()
     }
 
-    pub fn cross(&self, rhs: Self) -> Self {
-        let [xa, ya, za] = self.0;
-        let [xb, yb, zb] = rhs.0;
+    pub fn cross_mul(&self, rhs: Self) -> Self {
+        let [xa, ya, za] = **self;
+        let [xb, yb, zb] = *rhs;
         Self([ya * zb - za * yb, za * xb - xa * zb, xa * yb - ya * xb])
     }
 
@@ -106,53 +85,17 @@ impl Vector {
     }
 }
 
-impl From<[f64; 3]> for Point {
-    fn from(v: [f64; 3]) -> Self {
-        Self(v)
+primitive_operators!(
+    Point;
+    [rhs=Self] {
+        Add(add);
+        Sub(sub);
     }
-}
-
-impl<I: Iterator<Item = f64>> From<IteratorFixed<I, 3>> for Point {
-    fn from(iter: IteratorFixed<I, 3>) -> Self {
-        iter.collect::<[f64; 3]>().into()
+    [rhs=f64] {
+        Mul(mul);
+        Div(div);
     }
-}
-
-impl IntoIterator for Point {
-    type Item = f64;
-    type IntoIter = IntoIter<f64, 3>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
-
-impl Add for Point {
-    type Output = Self;
-    fn add(self, rhs: Vector) -> Self {
-        self.fixed_iter().zip(rhs.0).map(|(a, b)| a + b).into()
-    }
-}
-
-impl Sub for Point {
-    type Output = Self;
-    fn sub(self, rhs: Vector) -> Self {
-        self.map_binary_op(rhs, f64::sub)
-    }
-}
-
-impl Mul<f64> for Vector {
-    type Output = Vector;
-    fn mul(self, rhs: f64) -> Vector {
-        self.map_with_number(rhs, f64::mul)
-    }
-}
-
-impl Div<f64> for Vector {
-    type Output = Vector;
-    fn div(self, rhs: f64) -> Vector {
-        self.map_with_number(rhs, f64::div)
-    }
-}
+);
 
 impl Neg for Vector {
     type Output = Self;
@@ -164,14 +107,14 @@ impl Neg for Vector {
 impl Mul for Vector {
     type Output = f64;
     fn mul(self, rhs: Self) -> f64 {
-        self.dot(rhs)
+        self.dot_mul(rhs)
     }
 }
 
 impl BitXor for Vector {
     type Output = Self;
     fn bitxor(self, rhs: Self) -> Self {
-        self.cross(rhs)
+        self.cross_mul(rhs)
     }
 }
 

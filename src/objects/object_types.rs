@@ -37,7 +37,11 @@ pub trait MarchingObject: Object {
     }
 
     fn sdf_normal(&self, pos: Point) -> Vector {
-        BASIS.into_iter_fixed().map(|x| self.sdf_drv(pos, x)).into()
+        Vector::BASIS
+            .into_iter_fixed()
+            .map(|x| self.sdf_drv(pos, x))
+            .collect::<[f64; 3]>()
+            .into()
     }
 }
 

@@ -17,7 +17,7 @@ impl Object for DummyObject {
     }
 
     fn normal(&self, _pos: Point) -> Vector {
-        ORIGIN
+        Point::ORIGIN
     }
 
     fn material(&self) -> Material {

@@ -19,7 +19,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: i32,
-    pub m_type: MaterialType,
+    pub ty: MaterialType,
 }
 
 impl Material {
@@ -28,6 +28,6 @@ impl Material {
         diffuse: 0.0,
         specular: 0.0,
         shininess: 0,
-        m_type: MaterialType::Common,
+        ty: MaterialType::Common,
     };
 }

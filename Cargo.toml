@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "0.24"
-indicatif = { version = "0.17", features = ["rayon"] }
+derive_more = "0.99"
 iter_fixed = "0.3"
 lazy_static = "1.4"
 rayon = "1.7"
+
+image = "0.24"
+indicatif = { version = "0.17", features = ["rayon"] }

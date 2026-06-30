@@ -18,8 +18,8 @@ impl Default for Hit {
         Self {
             object: DummyObject::new(),
             depth: f64::INFINITY,
-            point: ORIGIN,
-            crossed_point: ORIGIN,
+            point: Point::ORIGIN,
+            crossed_point: Point::ORIGIN,
         }
     }
 }
@@ -236,7 +236,7 @@ impl SceneObjects {
         if context.limit_reached() {
             return color;
         }
-        match hit.material().m_type {
+        match hit.material().ty {
             MaterialType::Common => color,
             MaterialType::Reflective { reflectance } => {
                 let refl_color = self.compute_reflected_case(ray, &hit, &context);

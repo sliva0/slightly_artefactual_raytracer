@@ -30,7 +30,7 @@ fn main() {
                         diffuse: 1.0,
                         specular: 0.3,
                         shininess: 100,
-                        m_type: MaterialType::Refractive {
+                        ty: MaterialType::Refractive {
                             surface_transparency: 1.0,
                             index: 1.5,
                         },
@@ -45,7 +45,7 @@ fn main() {
                         diffuse: 1.0,
                         specular: 0.6,
                         shininess: 200,
-                        m_type: MaterialType::Reflective { reflectance: 0.3 },
+                        ty: MaterialType::Reflective { reflectance: 0.3 },
                     },
                 )],
                 vec![

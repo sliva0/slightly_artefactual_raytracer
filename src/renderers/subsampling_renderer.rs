@@ -36,6 +36,25 @@ impl Pixel {
     }
 }
 
+#[allow(clippy::needless_range_loop)]
+fn collect_pixel_neighbors(image: &Image, x: usize, y: usize) -> Vec<Color> {
+    let mut colors = vec![];
+    for xi in (x - 1)..=(x + 1) {
+        for yi in (y - 1)..=(y + 1) {
+            if let Pixel::Rendered(color) = image[yi][xi] {
+                colors.push(color);
+            }
+        }
+    }
+    colors
+}
+
+fn pixel_color(image: &Image, x: u32, y: u32) -> Color {
+    image[y as usize][x as usize]
+        .color()
+        .expect("Some pixels somehow didn't render")
+}
+
 pub struct SubsamplingRenderer {
     pub scene: Scene,
     pub subsampling_limit: f64,
@@ -57,26 +76,13 @@ impl SubsamplingRenderer {
         x == 0 || y == 0 || x == width - 1 || y == height - 1
     }
 
-    #[allow(clippy::needless_range_loop)]
-    fn collect_neighbors(image: &Image, x: usize, y: usize) -> Vec<Color> {
-        let mut colors = vec![];
-        for xi in (x - 1)..=(x + 1) {
-            for yi in (y - 1)..=(y + 1) {
-                if let Pixel::Rendered(color) = image[yi][xi] {
-                    colors.push(color);
-                }
-            }
-        }
-        colors
-    }
-
     fn interpolate_pixel(&self, image: &mut Image, x: usize, y: usize) -> Pixel {
-        let colors = Self::collect_neighbors(image, x, y);
+        let colors = collect_pixel_neighbors(image, x, y);
 
-        if Color::colors_diff(&colors) > self.subsampling_limit {
+        if Color::max_diff(&colors) > self.subsampling_limit {
             Pixel::ToRender
         } else {
-            Pixel::Interpolated(Color::colors_avg(colors))
+            Pixel::Interpolated(Color::average_color(colors))
         }
     }
 
@@ -148,12 +154,6 @@ impl SubsamplingRenderer {
         image
     }
 
-    fn pixel_color(image: &Image, x: u32, y: u32) -> Color {
-        image[y as usize][x as usize]
-            .color()
-            .expect("Some pixels somehow didn't render")
-    }
-
     pub fn render(&self, func: SubsamplingFunc) -> ImageBuffer<RawColor, Vec<u8>> {
         let [width, height] = self.scene.resolution;
 
@@ -164,10 +164,10 @@ impl SubsamplingRenderer {
             let mut colors = Vec::with_capacity((mp * mp) as usize);
             for xi in (xi * mp)..((xi + 1) * mp) {
                 for yi in (yi * mp)..((yi + 1) * mp) {
-                    colors.push(Self::pixel_color(&image, xi, yi));
+                    colors.push(pixel_color(&image, xi, yi));
                 }
             }
-            Color::colors_avg(colors).into_raw()
+            Color::average_color(colors).into()
         })
     }
 }

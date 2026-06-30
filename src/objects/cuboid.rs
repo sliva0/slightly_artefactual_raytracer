@@ -51,10 +51,10 @@ impl MetaTracingObject for Cuboid {
         let mut objects = Vec::with_capacity(12);
 
         for (dir, side) in basis_pairs() {
-            let dir = dir.pmul(self.size);
+            let dir = dir.pairwise_mul(self.size);
             let sides = (
-                side.pmul(self.size),
-                (dir ^ side).normalize().pmul(self.size),
+                side.pairwise_mul(self.size),
+                (dir ^ side).normalize().pairwise_mul(self.size),
             );
 
             objects.extend(ObjectPolygon::collect_cuboid_face(

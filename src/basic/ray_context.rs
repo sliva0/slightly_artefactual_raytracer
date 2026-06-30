@@ -1,14 +1,16 @@
 use std::{collections::HashSet, hash::Hash, sync::Arc};
 
+use derive_more::Deref;
+
 use super::MaterialType;
 use crate::objects::ObjectType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deref)]
 struct HashWrapper(ObjectType);
 
 impl HashWrapper {
     fn as_ptr(&self) -> *const () {
-        Arc::as_ptr(&self.0) as *const ()
+        Arc::as_ptr(self) as *const ()
     }
 }
 
@@ -52,7 +54,7 @@ impl RayContext {
             if let MaterialType::Refractive {
                 surface_transparency: _,
                 index,
-            } = obj.0.material().m_type
+            } = obj.material().ty
             {
                 refr_index *= index;
             } else {
